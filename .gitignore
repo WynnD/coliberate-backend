@@ -58,3 +58,5 @@ typings/
 # dotenv environment variables file
 .env
 
+# system specific directory information
+.DS_Store
