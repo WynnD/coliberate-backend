@@ -1,10 +1,10 @@
 const mongo = require('mongodb');
 
 class ColiberateDbWrapper {
-  constructor(url) {
+  constructor(url, dbName = 'coliberate') {
     this.MongoClient = mongo.MongoClient;
     this.url = url;
-    this.dbName = 'coliberate';
+    this.dbName = dbName;
     this.connectInstance = null;
     this.dbInstance = null;
     // this.collections = {
@@ -137,12 +137,41 @@ class ColiberateDbWrapper {
     return await this.deleteInDB('members', query);
   }
 
-  async findMember(query) {
-    return await this.findInDB('members', query);
+  async findMember(query, fieldsToExclude = { password: 0 }) {
+    return await this.findInDB('members', query, fieldsToExclude);
   }
 
-  async searchMembers(query = {}, fieldsToExclude = { password: 0 }) {
-    return await this.findInDB('members', query, fieldsToExclude);
+  // checks for valid fields
+  isValidProject(project) {
+    if (typeof project !== 'object') {
+      return false;
+    } else {
+      const expectedFields = ['name', 'description', 'id', 'members', 'startdate', 'releases', 'sprints', 'tasks'];
+      const hasAMissingField = expectedFields.filter(f => !project[f]).length > 0;
+
+      if (hasAMissingField) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  async addProject(project = {}) {
+    if (!this.isValidProject(project)) {
+      throw Error('Invalid project');
+    } else {
+      const db = await this.getDatabaseInstance();
+      await this.insertOneIntoDB('projects', project);
+    }
+  }
+
+  async deleteProject(query) {
+    return await this.deleteInDB('projects', query);
+  }
+
+  async findProject(query, fieldsToExclude = { password: 0 }) {
+    return await this.findInDB('projects', query, fieldsToExclude);
   }
 
   async closeConnection() {
