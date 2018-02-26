@@ -2,6 +2,12 @@ const dbWrapper = require('./ColiberateDBWrapper');
 
 const url = 'mongodb://localhost:27017';
 
+beforeEach(async () => {
+  try {
+    await db.dropCollectionInDB('members');
+  } catch (err) {}
+});
+
 test('connects to mongo server', async () => {
   expect.assertions(2);
   const db = new dbWrapper(url);
@@ -29,9 +35,6 @@ test('adding and removing a member in the database', async () => {
   };
   // # of keys + 1 for _id field added by mongo
   expect.assertions(1 + Object.keys(member).length + 1 + 5);
-
-  console.log("TODO: Refactor into a global setup/teardown method");
-  await db.dropCollectionInDB('members');
 
   await db.addMember(member);
 
