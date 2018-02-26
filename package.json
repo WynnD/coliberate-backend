@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/WynnD/coliberate-backend#readme",
   "dependencies": {
+    "body-parser": "^1.18.2",
+    "eslint": "^4.18.1",
     "express": "^4.16.2",
     "mongodb": "^3.0.2",
     "yargs": "^11.0.0"

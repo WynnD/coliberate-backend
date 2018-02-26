@@ -1,5 +1,7 @@
 const express = require('express'),
-  app = express();
+  app = express(),
+  bodyParser = require('body-parser');
+
 
 const argv = require('yargs')
   .usage('Usage: $0 -p [integer] -i [string of IP address] -f [directory to build or dist folder] -d')
@@ -25,6 +27,17 @@ const db = new dbWrapper(url, argv.dev ? 'coliberate-dev' : 'coliberate');
 // files in public folder can be accessed via URL
 app.use(express.static(argv['build-folder']));
 
+app.use(bodyParser.json()); // support JSON-encoded bodies
+app.use(bodyParser.urlencoded({ extended: true})); // support URL-encoded bodies
+
+if (argv.dev) {
+  app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+  });
+}
+
 app.get('/', (req, res) => {
   res.sendFile(`./index.html`, { root: argv['build-folder'] });
 });
@@ -32,6 +45,43 @@ app.get('/', (req, res) => {
 app.get('/data', (req, res) => {
   res.send({ error: 'Data as a JSON object should be returned here' });
 });
+
+app.post('/api/login', async (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+
+  console.log("/api/login: Received", { username, password });
+
+  if (!username || !password) {
+    res.status(403).send({ error: 'Login fields must be filled' });
+    return;
+  }
+
+  const query = { username, password };
+  const member = await db.findMember(query);
+
+  console.log("/api/login: member login", member);
+
+  if (member.length === 1) {
+    const data = {};
+    // omit password field if necessary
+    if (member[0].password) {
+      Object.keys(member[0]).forEach(f => {
+        if (f !== 'password') {
+          data[f] = member[0][f];
+        }
+      })
+    } else {
+      data = member[0];
+    }
+    res.status(200).send({
+      status: 200,
+      data
+    });
+  } else {
+    res.status(403).send({ error: 'Invalid login' });
+  }
+})
 
 // ex: http://127.0.0.1/projects/?member_id=3
 // TODO: use app.route() for CRUD operations - https://expressjs.com/en/guide/routing.html
@@ -68,9 +118,9 @@ async function initializeDbDev() {
     {
       id: 1,
       name: 'John Smith',
-      email: 'company@company.com',
+      email: 'johnsmith@company.com',
       password: 'password',
-      username: 'company@company.com'
+      username: 'johnsmith@company.com'
     },
     {
       id: 2,
