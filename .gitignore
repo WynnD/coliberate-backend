@@ -60,3 +60,5 @@ typings/
 
 # system specific directory information
 .DS_Store
+
+test-db/*
