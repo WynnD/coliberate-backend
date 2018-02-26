@@ -33,16 +33,18 @@ app.get('/data', (req, res) => {
   res.send({ error: 'Data as a JSON object should be returned here' });
 });
 
-app.get('/projects', async (req, res) => {
-  const memberID = req.query.memberid;
+// ex: http://127.0.0.1/projects/?member_id=3
+// TODO: use app.route() for CRUD operations - https://expressjs.com/en/guide/routing.html
+app.get('/api/projects', async (req, res) => {
+  const memberID = req.query.member_id;
 
   if (memberID === undefined || isNaN(memberID)) {
-    res.sendStatus(403).end();
+    res.status(403).send({ error: 'No member ID specified' });
   } else {
     const data = await db.findProject({ members: { $elemMatch: { memberID: +memberID } } });
-    res.send(data);
+    res.status(200).send(data);
   }
-})
+});
 
 let server;
 if (argv.ip !== '127.0.0.1') {
