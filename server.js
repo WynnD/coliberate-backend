@@ -46,6 +46,44 @@ app.get('/data', (req, res) => {
   res.send({ error: 'Data as a JSON object should be returned here' });
 });
 
+async function registerHandler(req, res) {
+  const accountData = req.body.accountData;
+
+  console.log('registerHandler: Received', { accountData });
+
+  if (!db.isValidMember(accountData)) {
+    res.status(400).send({ error: 'Invalid fields' });
+  } else {
+    accountData.id = +accountData.id;
+    // check if member ID and/or login exists
+    const idSearch = await db.findMember({ id: accountData.id });
+    const usernameSearch = await db.findMember({ username: accountData.username });
+
+    if (usernameSearch.length > 0) {
+      console.log({ usernameSearch });
+      res.status(400).send({ error: 'Login already exists' });
+    } else if (idSearch.length > 0) {
+      // TODO: Add better handling for ID clashing
+      console.log({ idSearch });
+      res.status(400).send({ error: 'ID already exists. Refresh and try again.' });
+    } else {
+      await db.addMember(accountData);
+      const data = await db.findMember({ id: accountData.id });
+      if (data.length === 1) {
+        delete data[0].password;
+        res.status(200).send({
+          status: 200,
+          data: data[0]
+        });
+      } else {
+        res.status(500).send({ error: 'Array length > 0' });
+      }
+    }
+  }
+}
+
+app.post('/api/register', registerHandler)
+
 app.post('/api/login', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
@@ -81,8 +119,22 @@ app.post('/api/login', async (req, res) => {
   } else {
     res.status(403).send({ error: 'Invalid login' });
   }
-})
+});
 
+// get list of members
+// TODO: only get if member of member list? -> parameter via URL
+app.route('/api/members')
+  .get(async (req, res) => {
+    const data = await db.findMember({});
+
+    res.status(200).send({
+      status: 200,
+      data: data.map(d => { delete d.password; return d; })
+    });
+  })
+  .post(registerHandler);
+
+// get list of projects based on member id
 // ex: http://127.0.0.1/projects/?member_id=3
 // TODO: use app.route() for CRUD operations - https://expressjs.com/en/guide/routing.html
 app.get('/api/projects', async (req, res) => {
