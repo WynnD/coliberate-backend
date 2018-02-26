@@ -38,7 +38,8 @@ if (argv.dev) {
   });
 }
 
-app.get('/', (req, res) => {
+// any url not starting with /api
+app.get(/^(?!\/api).*$/, (req, res) => {
   res.sendFile(`./index.html`, { root: argv['build-folder'] });
 });
 
