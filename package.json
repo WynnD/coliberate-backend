@@ -26,5 +26,9 @@
   },
   "devDependencies": {
     "jest": "^22.3.0"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js"],
+    "moduleDirectories": ["node_modules", "modules"]
   }
 }
