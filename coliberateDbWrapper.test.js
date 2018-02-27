@@ -30,7 +30,7 @@ test('connects to coliberate database in mongo', async () => {
 
 test('adding and removing a member in the database', async () => {
   const member = {
-    id: 5,
+    id: '5',
     name: 'Test Member',
     email: 'Test@example.com',
     password: 'password',

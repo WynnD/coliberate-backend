@@ -55,7 +55,7 @@ async function memberRegisterHandler(req, res) {
   if (!db.isValidMember(accountData)) {
     res.status(400).send({ error: 'Invalid fields' });
   } else {
-    accountData.id = +accountData.id;
+    // accountData.id = +accountData.id;
     // check if member ID and/or login exists
     const idSearch = await db.findMember({ id: accountData.id });
     const usernameSearch = await db.findMember({ username: accountData.username });
@@ -130,11 +130,11 @@ app.route('/api/members/:id?')
 
     const query = {};
 
-    if (memberID) {
-      query.id = +memberID;
-    }
+    // if (memberID) {
+    //   query.id = +memberID;
+    // }
 
-    const data = await db.findMember(query);
+    let data = await db.findMember(query);
 
     res.status(200).send({
       status: 200,
@@ -154,7 +154,8 @@ app.route('/api/projects/:id?')
     if (memberID === undefined || isNaN(memberID)) {
       res.status(403).send({ error: 'No member ID specified' });
     } else {
-      const query = { members: { $elemMatch: { memberID: +memberID } } };
+      console.log({ memberID })
+      const query = { members: { $elemMatch: { memberID: memberID } } };
       if (projectID) {
         query.id = projectID;
       }
@@ -164,7 +165,14 @@ app.route('/api/projects/:id?')
   }).post(async (req, res) => {
     const projectData = req.body.projectData;
 
-    console.log('projectRegisterHandler: Received', { projectData });
+    const expectedEmptyFields = ['releases', 'sprints', 'tasks'];
+    expectedEmptyFields.forEach(f => {
+      if (!projectData[f]) {
+        projectData[f] = [];
+      }
+    });
+
+    console.log('projectRegisterHandler: Received', { projectData }, projectData.members);
 
     if (!db.isValidProject(projectData)) {
       res.status(400).send({ error: 'Invalid fields' });
@@ -211,21 +219,21 @@ async function initializeDbDev() {
   console.log("Populating database with sample data");
   const sampleMembers = [
     {
-      id: 1,
+      id: '1',
       name: 'John Smith',
       email: 'johnsmith@company.com',
       password: 'password',
       username: 'johnsmith@company.com'
     },
     {
-      id: 2,
+      id: '2',
       name: 'Jane Doe',
       email: 'developer1@company.com',
       password: 'password',
       username: 'developer1@company.com'
     },
     {
-      id: 3,
+      id: '3',
       name: 'Generic Developer #1',
       email: 'developer_1@company.com',
       password: 'password',
@@ -240,11 +248,11 @@ async function initializeDbDev() {
       description: 'Description for Test Project #1',
       members: [
         {
-          memberID: 1,
+          memberID: '1',
           role: 'Scrum Master'
         },
         {
-          memberID: 2,
+          memberID: '2',
           role: 'Developer'
         },
       ],
@@ -259,11 +267,11 @@ async function initializeDbDev() {
       description: 'Test Project #2 Description',
       members: [
         {
-          memberID: 2,
+          memberID: '2',
           role: 'Scrum Master'
         },
         {
-          memberID: 3,
+          memberID: '3',
           role: 'Product Owner'
         },
       ],
