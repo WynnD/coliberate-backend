@@ -47,10 +47,10 @@ app.get('/data', (req, res) => {
   res.send({ error: 'Data as a JSON object should be returned here' });
 });
 
-async function registerHandler(req, res) {
+async function memberRegisterHandler(req, res) {
   const accountData = req.body.accountData;
 
-  console.log('registerHandler: Received', { accountData });
+  console.log('memberRegisterHandler: Received', { accountData });
 
   if (!db.isValidMember(accountData)) {
     res.status(400).send({ error: 'Invalid fields' });
@@ -83,7 +83,7 @@ async function registerHandler(req, res) {
   }
 }
 
-app.post('/api/register', registerHandler)
+app.post('/api/register', memberRegisterHandler)
 
 app.post('/api/login', async (req, res) => {
   const username = req.body.username;
@@ -141,7 +141,7 @@ app.route('/api/members/:id?')
       data: data.map(d => { delete d.password; return d; })
     });
   })
-  .post(registerHandler);
+  .post(memberRegisterHandler);
 
 // get list of projects based on member id
 // ex: http://127.0.0.1/projects/?member_id=3
@@ -161,7 +161,35 @@ app.route('/api/projects/:id?')
       const data = await db.findProject(query);
       res.status(200).send(data);
     }
-  })
+  }).post(async (req, res) => {
+    const projectData = req.body.projectData;
+
+    console.log('projectRegisterHandler: Received', { projectData });
+
+    if (!db.isValidProject(projectData)) {
+      res.status(400).send({ error: 'Invalid fields' });
+    } else {
+      // check if member ID and/or login exists
+      const idSearch = await db.findProject({ id: projectData.id });
+
+      if (idSearch.length > 0) {
+        // TODO: Add better handling for ID clashing
+        console.log({ idSearch });
+        res.status(400).send({ error: 'ID already exists. Try again under a different name.' });
+      } else {
+        await db.addProject(projectData);
+        const data = await db.findProject({ id: projectData.id });
+        if (data.length === 1) {
+          res.status(200).send({
+            status: 200,
+            data: data[0]
+          });
+        } else {
+          res.status(500).send({ error: 'Array length > 0' });
+        }
+      }
+    }
+  });
 
 let server;
 if (argv.ip !== '127.0.0.1') {
