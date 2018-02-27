@@ -124,9 +124,17 @@ app.post('/api/login', async (req, res) => {
 
 // get list of members
 // TODO: only get if member of member list? -> parameter via URL
-app.route('/api/members')
+app.route('/api/members/:id?')
   .get(async (req, res) => {
-    const data = await db.findMember({});
+    const memberID = req.params.id;
+
+    const query = {};
+
+    if (memberID) {
+      query.id = +memberID;
+    }
+
+    const data = await db.findMember(query);
 
     res.status(200).send({
       status: 200,
