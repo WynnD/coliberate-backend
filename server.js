@@ -55,7 +55,6 @@ async function memberRegisterHandler(req, res) {
   if (!db.isValidMember(accountData)) {
     res.status(400).send({ error: 'Invalid fields' });
   } else {
-    // accountData.id = +accountData.id;
     // check if member ID and/or login exists
     const idSearch = await db.findMember({ id: accountData.id });
     const usernameSearch = await db.findMember({ username: accountData.username });
@@ -130,9 +129,9 @@ app.route('/api/members/:id?')
 
     const query = {};
 
-    // if (memberID) {
-    //   query.id = +memberID;
-    // }
+    if (memberID) {
+      query.id = memberID;
+    }
 
     let data = await db.findMember(query);
 
