@@ -146,16 +146,22 @@ app.route('/api/members/:id?')
 // get list of projects based on member id
 // ex: http://127.0.0.1/projects/?member_id=3
 // TODO: use app.route() for CRUD operations - https://expressjs.com/en/guide/routing.html
-app.get('/api/projects', async (req, res) => {
-  const memberID = req.query.member_id;
+app.route('/api/projects/:id?')
+  .get(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.id;
 
-  if (memberID === undefined || isNaN(memberID)) {
-    res.status(403).send({ error: 'No member ID specified' });
-  } else {
-    const data = await db.findProject({ members: { $elemMatch: { memberID: +memberID } } });
-    res.status(200).send(data);
-  }
-});
+    if (memberID === undefined || isNaN(memberID)) {
+      res.status(403).send({ error: 'No member ID specified' });
+    } else {
+      const query = { members: { $elemMatch: { memberID: +memberID } } };
+      if (projectID) {
+        query.id = projectID;
+      }
+      const data = await db.findProject(query);
+      res.status(200).send(data);
+    }
+  })
 
 let server;
 if (argv.ip !== '127.0.0.1') {
