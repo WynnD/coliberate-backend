@@ -20,7 +20,7 @@ const argv = require('yargs')
   .help('h').alias('h', 'help')
   .argv;
 
-const dbWrapper = require('./modules/ColiberateDBWrapper');
+const dbWrapper = require('./modules/ColiberateDbWrapper');
 const url = 'mongodb://localhost:27017';
 const db = new dbWrapper(url, argv.dev ? 'coliberate-dev' : 'coliberate');
 

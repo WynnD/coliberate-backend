@@ -1,4 +1,4 @@
-const dbWrapper = require('./modules/ColiberateDBWrapper');
+const dbWrapper = require('./modules/ColiberateDbWrapper');
 
 const url = 'mongodb://localhost:27017';
 
