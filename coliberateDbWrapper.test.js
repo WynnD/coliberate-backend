@@ -58,6 +58,38 @@ test('adding and removing a member in the database', async () => {
   expect(searchResult.length).toBe(0);
 });
 
+test('Adding a story into a project in the database', async () =>{
+  const project = {
+    id: 'TestProject2',
+    name: 'Test project',
+    description: 'project description',
+    members: [],
+    stories: {},
+    releases: [],
+    sprints: [],
+    tasks: [],
+    startdate: new Date().toUTCString()
+  };
+  await db.addProject(project);
+  
+  const story1 = {
+      id: 'story-id',
+      name: 'story name',
+      description: 'story description',
+      tasks: [
+      {
+        id: 'task-id',
+        status: 'todo/in-progress/done',
+      }],
+  };
+  await db.addStory(project.id, story1);
+  searchResult = await db.findStories(project.id);
+  expect(searchResult[0].stories.id.toEqual(story1.id));
+
+  console.log('SearchResult = ' + JSON.stringify(searchResult));
+    });
+
+
 test('adding and removing a project in the database', async () => {
   const project = {
     id: 'TestProject1',
@@ -84,6 +116,8 @@ test('adding and removing a project in the database', async () => {
       expect(searchResult[0].members.length).toEqual(0);
     }
   });
+
+  
 
   const deleteResult = await db.deleteProject({ id: project.id });
   expect(deleteResult).toBeTruthy();

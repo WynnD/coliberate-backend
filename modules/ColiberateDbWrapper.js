@@ -73,6 +73,48 @@ class ColiberateDbWrapper {
     });
   }
 
+  
+  insertStoryInDB(projectID, story)
+  {
+    return new Promise((fulfill, reject)=> {
+      
+      console.log(story);
+      this.getDatabaseInstance()
+        .then(db => {
+          db.collection('projects')
+            .updateOne( {"id:" : projectID} , {$set:{"stories" : story } }, function(err, res) {
+              
+              console.log("1 document updated");
+              console.log(res.result);
+              if (err) {
+                reject(err);
+              } else {
+                fulfill(res);
+              }
+          });
+        }).catch(reject);
+      });
+  }
+
+
+  findStories(projectID)
+  {
+    return new Promise((fulfill,reject) =>{
+      this.getDatabaseInstance()
+        .then( db=> {
+          db.collection('projects')
+            .find({ id : projectID})
+            .toArray((err, result) => {
+              if (err) {
+                reject(err);
+              } else {
+                fulfill(result);
+              }
+            });
+          }).catch(reject);
+    });
+  }
+
   deleteInDB(collectionName, query) {
     return new Promise((fulfill, reject) => {
       if (!query) {
@@ -140,6 +182,12 @@ class ColiberateDbWrapper {
   async findMember(query, fieldsToExclude = { password: 0 }) {
     return await this.findInDB('members', query, fieldsToExclude);
   }
+
+  async addStory(projectID, story)
+  {
+    return await this.insertStoryInDB(projectID, story);
+  }
+
 
   // checks for valid fields
   isValidProject(project) {
