@@ -83,11 +83,13 @@ test('Adding a story into a project in the database', async () =>{
       }],
   };
   await db.addStory(project.id, story1);
-  searchResult = await db.findStories(project.id);
-  expect(searchResult[0].stories.id.toEqual(story1.id));
+  const searchResult = await db.findStories(project.id);
+  console.log(searchResult);
+  // To Joe: IIRC, the stories collection is an object, not an array
+  expect(searchResult[0].id === story1.id);
 
   console.log('SearchResult = ' + JSON.stringify(searchResult));
-    });
+});
 
 
 test('adding and removing a project in the database', async () => {
