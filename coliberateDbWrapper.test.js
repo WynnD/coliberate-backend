@@ -59,51 +59,49 @@ test('adding and removing a member in the database', async () => {
 });
 
 
-    test('Adding a story into a project in the database', async () =>{
-      const project = {
-        id: 'TestProject3',
-        name: 'Test project',
-        description: 'project description',
-        members: [],
-        stories: {
-          'story-id3': {
-            id: 'story-id3',
-            name: 'story name1',
-            description: 'story description',
-            tasks: [
-            {
-              id: 'task-id',
-              status: 'todo/in-progress/done',
-            }],
-        }
+test('Adding a story into a project in the database', async () =>{
+  const project = {
+    id: 'TestProject3',
+    name: 'Test project',
+    description: 'project description',
+    members: [],
+    stories: {
+      'story-id3': {
+        id: 'story-id3',
+        name: 'story name1',
+        description: 'story description',
+        tasks: [
+        {
+          id: 'task-id',
+          status: 'todo/in-progress/done',
+        }],
+      }
+    },
+    releases: [],
+    sprints: [],
+    tasks: [],
+    startdate: new Date().toUTCString()
+  };
+  await db.addProject(project);
+  
+  const story1 = {
+      id: 'story-id',
+      name: 'story name',
+      description: 'story description',
+      tasks: [
+      {
+        id: 'task-id',
+        status: 'todo/in-progress/done',
+      }],
+  };
+  
+  await db.addStory(project.id, story1);
+  const searchResult = await db.getStories(project.id);
+  expect(searchResult[story1.id].id).toEqual(story1.id);
 
+  console.log('SearchResult = ' + JSON.stringify(searchResult));
+});
 
-        },
-        releases: [],
-        sprints: [],
-        tasks: [],
-        startdate: new Date().toUTCString()
-      };
-      await db.addProject(project);
-      
-      const story1 = {
-          id: 'story-id',
-          name: 'story name',
-          description: 'story description',
-          tasks: [
-          {
-            id: 'task-id',
-            status: 'todo/in-progress/done',
-          }],
-      };
-      
-      await db.addStory(project.id, story1);
-      searchResult = await db.getStories(project.id);
-      expect(searchResult[story1.id].id).toEqual(story1.id);
-    
-      console.log('SearchResult = ' + JSON.stringify(searchResult));
-        });
-    
 test('adding in a feature to the database', async() => {
   const project = {
     id: 'TestProject1',
@@ -115,19 +113,20 @@ test('adding in a feature to the database', async() => {
     sprints: [],
     tasks: [],
     startdate: new Date().toUTCString()
-  };  
+  };
 
   const feature1 = {
-    id : 20,
-    name : 'test feature'
+    id : 'feature-20',
+    name : 'test feature',
+    // TODO: Add fields
   }
 
   await db.addFeature(project.id, feature1);
 
-  feature
+  const searchResult = await db.getFeatures(project.id);
+  expect(searchResult[feature1.id].id).toEqual(feature1.id);
 
-
-
+  console.log('SearchResult = ' + JSON.stringify(searchResult));
 });
 
 test('adding and removing a project in the database', async () => {

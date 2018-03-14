@@ -73,42 +73,6 @@ class ColiberateDbWrapper {
     });
   }
 
-  
-  insertStoryInDB(projectID, newStory)
-  {
-    return new Promise(async (fulfill, reject)=> {
-      const projectStories = await this.getStories(projectID);
-      projectStories[newStory.id] = newStory;
-
-      //console.log(newStory);
-      this.getDatabaseInstance()
-        .then(db => {
-          db.collection('projects')
-            .updateOne({ id: projectID }, { $set: { stories: projectStories }}, (err, res) => {
-              
-              //console.log("1 document updated");
-              //console.log(res.result);
-              if (err) {
-                reject(err);
-              } else {
-                fulfill(res);
-              }
-          });
-        }).catch(reject);
-      });
-  }
-
-
-  // To Joe: is this to find a specific story? fix parameters to do so if necessary
-  async getStories(projectID) {
-    const projectResult = await this.findProject({id: projectID});
-    if (projectResult.length === 0) {
-      return {};
-    } else {
-      return projectResult[0].stories;
-    }
-  }
-
   deleteInDB(collectionName, query) {
     return new Promise((fulfill, reject) => {
       if (!query) {
@@ -138,6 +102,29 @@ class ColiberateDbWrapper {
                 reject(err);
               } else {
                 fulfill(delOK);
+              }
+            });
+        }).catch(reject);
+    });
+  }
+
+  updateInDB(collectionName, query = {}, updateFn = () => { }) {
+    return new Promise(async (fulfill, reject) => {
+      const entry = await this.findInDB(collectionName, query, {})[0];
+
+      if (!entry) {
+        reject(Error('No data found'));
+      }
+
+      const setQuery = updateFn(entry);
+      this.getDatabaseInstance()
+        .then(db => {
+          db.collection(collectionName)
+            .updateOne(query, { $set: setQuery }, (err, res) => {
+              if (err) {
+                reject(err);
+              } else {
+                fulfill(res);
               }
             });
         }).catch(reject);
@@ -177,12 +164,6 @@ class ColiberateDbWrapper {
     return await this.findInDB('members', query, fieldsToExclude);
   }
 
-  async addStory(projectID, story)
-  {
-    return await this.insertStoryInDB(projectID, story);
-  }
-
-
   // checks for valid fields
   isValidProject(project) {
     if (typeof project !== 'object') {
@@ -215,6 +196,77 @@ class ColiberateDbWrapper {
   async findProject(query, fieldsToExclude = { password: 0 }) {
     return await this.findInDB('projects', query, fieldsToExclude);
   }
+
+  async addStory(projectID, story) {
+    return await this.insertStoryInDB(projectID, story);
+  }
+
+  async insertStoryInDB(projectID, newStory) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      console.log(project);
+      project.stories[newStory.id] = newStory;
+      return { stories: project.stories };
+    });
+
+    // return new Promise(async (fulfill, reject) => {
+    //   const projectStories = await this.getStories(projectID);
+    //   projectStories[newStory.id] = newStory;
+
+    //   this.getDatabaseInstance()
+    //     .then(db => {
+    //       db.collection('projects')
+    //         .updateOne({ id: projectID }, { $set: { stories: projectStories } }, (err, res) => {
+    //           if (err) {
+    //             reject(err);
+    //           } else {
+    //             fulfill(res);
+    //           }
+    //         });
+    //     }).catch(reject);
+    // });
+  }
+
+  async getStories(projectID) {
+    const projectResult = await this.findProject({ id: projectID });
+    if (projectResult.length === 0) {
+      return {};
+    } else {
+      return projectResult[0].stories;
+    }
+  }
+
+  // async addFeature(projectID, feature) {
+  //   return await this.insertFeatureInDB(projectID, feature);
+  // }
+
+
+  // insertFeatureInDB(projectID, newStory) {
+  //   return new Promise(async (fulfill, reject) => {
+  //     const projectStories = await this.getStories(projectID);
+  //     projectStories[newStory.id] = newStory;
+
+  //     this.getDatabaseInstance()
+  //       .then(db => {
+  //         db.collection('projects')
+  //           .updateOne({ id: projectID }, { $set: { stories: projectStories } }, (err, res) => {
+  //             if (err) {
+  //               reject(err);
+  //             } else {
+  //               fulfill(res);
+  //             }
+  //           });
+  //       }).catch(reject);
+  //   });
+  // }
+
+  // async getStories(projectID) {
+  //   const projectResult = await this.findProject({ id: projectID });
+  //   if (projectResult.length === 0) {
+  //     return {};
+  //   } else {
+  //     return projectResult[0].stories;
+  //   }
+  // }
 
   async closeConnection() {
     const dbInstance = await this.getDatabaseInstance();
