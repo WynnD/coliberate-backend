@@ -110,13 +110,12 @@ class ColiberateDbWrapper {
 
   updateInDB(collectionName, query = {}, updateFn = () => { }) {
     return new Promise(async (fulfill, reject) => {
-      const entry = await this.findInDB(collectionName, query, {})[0];
-
-      if (!entry) {
+      const results = await this.findInDB(collectionName, query, {});
+      if (!results[0]) {
         reject(Error('No data found'));
       }
 
-      const setQuery = updateFn(entry);
+      const setQuery = updateFn(results[0]);
       this.getDatabaseInstance()
         .then(db => {
           db.collection(collectionName)

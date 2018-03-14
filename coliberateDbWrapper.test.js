@@ -102,32 +102,32 @@ test('Adding a story into a project in the database', async () =>{
   console.log('SearchResult = ' + JSON.stringify(searchResult));
 });
 
-test('adding in a feature to the database', async() => {
-  const project = {
-    id: 'TestProject1',
-    name: 'Test project',
-    description: 'project description',
-    members: [],
-    features: {},
-    releases: [],
-    sprints: [],
-    tasks: [],
-    startdate: new Date().toUTCString()
-  };
+// test('adding in a feature to the database', async() => {
+//   const project = {
+//     id: 'TestProject1',
+//     name: 'Test project',
+//     description: 'project description',
+//     members: [],
+//     features: {},
+//     releases: [],
+//     sprints: [],
+//     tasks: [],
+//     startdate: new Date().toUTCString()
+//   };
 
-  const feature1 = {
-    id : 'feature-20',
-    name : 'test feature',
-    // TODO: Add fields
-  }
+//   const feature1 = {
+//     id : 'feature-20',
+//     name : 'test feature',
+//     // TODO: Add fields
+//   }
 
-  await db.addFeature(project.id, feature1);
+//   await db.addFeature(project.id, feature1);
 
-  const searchResult = await db.getFeatures(project.id);
-  expect(searchResult[feature1.id].id).toEqual(feature1.id);
+//   const searchResult = await db.getFeatures(project.id);
+//   expect(searchResult[feature1.id].id).toEqual(feature1.id);
 
-  console.log('SearchResult = ' + JSON.stringify(searchResult));
-});
+//   console.log('SearchResult = ' + JSON.stringify(searchResult));
+// });
 
 test('adding and removing a project in the database', async () => {
   const project = {
