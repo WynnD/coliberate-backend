@@ -74,19 +74,20 @@ class ColiberateDbWrapper {
   }
 
   
-  insertStoryInDB(projectID, story)
+  insertStoryInDB(projectID, newStory)
   {
-    return new Promise((fulfill, reject)=> {
-      
-      console.log(story);
+    return new Promise(async (fulfill, reject)=> {
+      const projectStories = await this.getStories(projectID);
+      projectStories[newStory.id] = newStory;
+
+      //console.log(newStory);
       this.getDatabaseInstance()
         .then(db => {
-          // To Joe: IIRC, the stories collection is an object, not an array
           db.collection('projects')
-            .updateOne({ id: projectID }, { $set: { stories:[story] }}, (err, res) => {
+            .updateOne({ id: projectID }, { $set: { stories: projectStories }}, (err, res) => {
               
-              console.log("1 document updated");
-              console.log(res.result);
+              //console.log("1 document updated");
+              //console.log(res.result);
               if (err) {
                 reject(err);
               } else {
@@ -99,7 +100,7 @@ class ColiberateDbWrapper {
 
 
   // To Joe: is this to find a specific story? fix parameters to do so if necessary
-  async findStories(projectID) {
+  async getStories(projectID) {
     const projectResult = await this.findProject({id: projectID});
     if (projectResult.length === 0) {
       return {};

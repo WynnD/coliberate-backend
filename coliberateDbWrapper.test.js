@@ -58,39 +58,77 @@ test('adding and removing a member in the database', async () => {
   expect(searchResult.length).toBe(0);
 });
 
-test('Adding a story into a project in the database', async () =>{
+
+    test('Adding a story into a project in the database', async () =>{
+      const project = {
+        id: 'TestProject3',
+        name: 'Test project',
+        description: 'project description',
+        members: [],
+        stories: {
+          'story-id3': {
+            id: 'story-id3',
+            name: 'story name1',
+            description: 'story description',
+            tasks: [
+            {
+              id: 'task-id',
+              status: 'todo/in-progress/done',
+            }],
+        }
+
+
+        },
+        releases: [],
+        sprints: [],
+        tasks: [],
+        startdate: new Date().toUTCString()
+      };
+      await db.addProject(project);
+      
+      const story1 = {
+          id: 'story-id',
+          name: 'story name',
+          description: 'story description',
+          tasks: [
+          {
+            id: 'task-id',
+            status: 'todo/in-progress/done',
+          }],
+      };
+      
+      await db.addStory(project.id, story1);
+      searchResult = await db.getStories(project.id);
+      expect(searchResult[story1.id].id).toEqual(story1.id);
+    
+      console.log('SearchResult = ' + JSON.stringify(searchResult));
+        });
+    
+test('adding in a feature to the database', async() => {
   const project = {
-    id: 'TestProject2',
+    id: 'TestProject1',
     name: 'Test project',
     description: 'project description',
     members: [],
-    stories: {},
+    features: {},
     releases: [],
     sprints: [],
     tasks: [],
     startdate: new Date().toUTCString()
-  };
-  await db.addProject(project);
-  
-  const story1 = {
-      id: 'story-id',
-      name: 'story name',
-      description: 'story description',
-      tasks: [
-      {
-        id: 'task-id',
-        status: 'todo/in-progress/done',
-      }],
-  };
-  await db.addStory(project.id, story1);
-  const searchResult = await db.findStories(project.id);
-  console.log(searchResult);
-  // To Joe: IIRC, the stories collection is an object, not an array
-  expect(searchResult[0].id === story1.id);
+  };  
 
-  console.log('SearchResult = ' + JSON.stringify(searchResult));
+  const feature1 = {
+    id : 20,
+    name : 'test feature'
+  }
+
+  await db.addFeature(project.id, feature1);
+
+  feature
+
+
+
 });
-
 
 test('adding and removing a project in the database', async () => {
   const project = {
