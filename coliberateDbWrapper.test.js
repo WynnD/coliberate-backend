@@ -59,7 +59,7 @@ test('adding and removing a member in the database', async () => {
 });
 
 
-test('Adding a story into a project in the database', async () =>{
+test('Adding and removing a story into a project in the database', async () =>{
   const project = {
     id: 'TestProject3',
     name: 'Test project',
@@ -96,10 +96,14 @@ test('Adding a story into a project in the database', async () =>{
   };
   
   await db.addStory(project.id, story1);
-  const searchResult = await db.getStories(project.id);
-  expect(searchResult[story1.id].id).toEqual(story1.id);
+  let searchProject = await db.findProject({ id: project.id });
+  expect(searchProject[0].stories[story1.id].id).toEqual(story1.id);
 
-  console.log('SearchResult = ' + JSON.stringify(searchResult));
+  await db.deleteStory(project.id, story1.id);
+  searchProject = await db.findProject({ id: project.id });
+  expect(searchProject[0].stories[story1.id]).toBeUndefined();
+
+  console.log('SearchResult = ' + JSON.stringify(searchProject));
 });
 
 // test('adding in a feature to the database', async() => {

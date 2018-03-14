@@ -202,36 +202,16 @@ class ColiberateDbWrapper {
 
   async insertStoryInDB(projectID, newStory) {
     await this.updateInDB('projects', { id: projectID }, (project) => {
-      console.log(project);
       project.stories[newStory.id] = newStory;
       return { stories: project.stories };
     });
-
-    // return new Promise(async (fulfill, reject) => {
-    //   const projectStories = await this.getStories(projectID);
-    //   projectStories[newStory.id] = newStory;
-
-    //   this.getDatabaseInstance()
-    //     .then(db => {
-    //       db.collection('projects')
-    //         .updateOne({ id: projectID }, { $set: { stories: projectStories } }, (err, res) => {
-    //           if (err) {
-    //             reject(err);
-    //           } else {
-    //             fulfill(res);
-    //           }
-    //         });
-    //     }).catch(reject);
-    // });
   }
 
-  async getStories(projectID) {
-    const projectResult = await this.findProject({ id: projectID });
-    if (projectResult.length === 0) {
-      return {};
-    } else {
-      return projectResult[0].stories;
-    }
+  async deleteStory(projectID, storyID) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      delete project.stories[storyID];
+      return { stories: project.stories };
+    });
   }
 
   // async addFeature(projectID, feature) {
@@ -256,15 +236,6 @@ class ColiberateDbWrapper {
   //           });
   //       }).catch(reject);
   //   });
-  // }
-
-  // async getStories(projectID) {
-  //   const projectResult = await this.findProject({ id: projectID });
-  //   if (projectResult.length === 0) {
-  //     return {};
-  //   } else {
-  //     return projectResult[0].stories;
-  //   }
   // }
 
   async closeConnection() {
