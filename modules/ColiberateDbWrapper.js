@@ -150,7 +150,6 @@ class ColiberateDbWrapper {
     if (!this.isValidMember(member)) {
       throw Error('Invalid member');
     } else {
-      const db = await this.getDatabaseInstance();
       await this.insertOneIntoDB('members', member);
     }
   }
@@ -183,7 +182,6 @@ class ColiberateDbWrapper {
     if (!this.isValidProject(project)) {
       throw Error('Invalid project');
     } else {
-      const db = await this.getDatabaseInstance();
       await this.insertOneIntoDB('projects', project);
     }
   }
@@ -196,12 +194,8 @@ class ColiberateDbWrapper {
     return await this.findInDB('projects', query, fieldsToExclude);
   }
 
-  async addStory(projectID, story) {
-    return await this.insertStoryInDB(projectID, story);
-  }
-
-  async insertStoryInDB(projectID, newStory) {
-    await this.updateInDB('projects', { id: projectID }, (project) => {
+  async addStory(projectID, newStory) {
+    return await this.updateInDB('projects', { id: projectID }, (project) => {
       project.stories[newStory.id] = newStory;
       return { stories: project.stories };
     });
