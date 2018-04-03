@@ -3,15 +3,16 @@ const express = require('express'),
   bodyParser = require('body-parser');
 
 
+/* eslint-disable indent,no-console */
 const argv = require('yargs')
   .usage('Usage: $0 -p [integer] -i [string of IP address] -f [directory to build or dist folder] -d')
-  .default("p", 80)
+  .default('p', 80)
     .alias('p', 'port')
     .describe('p', 'Port to run server on')
-  .default("i", '127.0.0.1')
+  .default('i', '127.0.0.1')
     .alias('i', 'ip').alias('i', 'ip-address')
     .describe('i', 'IP Address to run server on')
-  .default("f", `${__dirname}/public`)
+  .default('f', `${__dirname}/public`)
     .alias('f','build-folder').alias('f', 'dist-folder')
     .describe('f', 'Directory to use as the public root folder (i.e. accessible via URL). Must be an absolute path that doesn\'t end with a slash')
   .default('d', false)
@@ -19,6 +20,7 @@ const argv = require('yargs')
     .describe('d', 'Populate database with dummy information for development')
   .help('h').alias('h', 'help')
   .argv;
+/* eslint-enable indent */
 
 const dbWrapper = require('./modules/ColiberateDbWrapper');
 const url = 'mongodb://localhost:27017';
@@ -32,15 +34,15 @@ app.use(bodyParser.urlencoded({ extended: true})); // support URL-encoded bodies
 
 if (argv.dev) {
   app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
   });
 }
 
 // any url not starting with /api
 app.get(/^(?!\/api).*$/, (req, res) => {
-  res.sendFile(`./index.html`, { root: argv['build-folder'] });
+  res.sendFile('./index.html', { root: argv['build-folder'] });
 });
 
 app.get('/data', (req, res) => {
@@ -82,13 +84,13 @@ async function memberRegisterHandler(req, res) {
   }
 }
 
-app.post('/api/register', memberRegisterHandler)
+app.post('/api/register', memberRegisterHandler);
 
 app.post('/api/login', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
-  console.log("/api/login: Received", { username, password });
+  console.log('/api/login: Received', { username, password });
 
   if (!username || !password) {
     res.status(403).send({ error: 'Login fields must be filled' });
@@ -98,17 +100,17 @@ app.post('/api/login', async (req, res) => {
   const query = { username, password };
   const member = await db.findMember(query);
 
-  console.log("/api/login: member login", member);
+  console.log('/api/login: member login', member);
 
   if (member.length === 1) {
-    const data = {};
+    let data = {};
     // omit password field if necessary
     if (member[0].password) {
       Object.keys(member[0]).forEach(f => {
         if (f !== 'password') {
           data[f] = member[0][f];
         }
-      })
+      });
     } else {
       data = member[0];
     }
@@ -153,7 +155,7 @@ app.route('/api/projects/:id?')
     if (memberID === undefined || isNaN(memberID)) {
       res.status(403).send({ error: 'No member ID specified' });
     } else {
-      console.log({ memberID })
+      console.log({ memberID });
       const query = { members: { $elemMatch: { memberID: memberID } } };
       if (projectID) {
         query.id = projectID;
@@ -198,6 +200,7 @@ app.route('/api/projects/:id?')
     }
   });
 
+// eslint-disable-next-line no-unused-vars
 let server;
 if (argv.ip !== '127.0.0.1') {
   server = app.listen(argv.port, argv.ip, onServerReady);
@@ -215,7 +218,7 @@ async function onServerReady() {
 }
 
 async function initializeDbDev() {
-  console.log("Populating database with sample data");
+  console.log('Populating database with sample data');
   const sampleMembers = {
     'jsmith-12313': {
       id: 'jsmith-12313',
@@ -331,14 +334,14 @@ async function initializeDbDev() {
         'homepage': {
           id: 'homepage',
           status: 'in-progress',
-            // status must be one of these
-            // progress can be 100%, but doesn't necessarily mean that story is completed
-            // for example, didn't generate/assign every task associated with this story
+          // status must be one of these
+          // progress can be 100%, but doesn't necessarily mean that story is completed
+          // for example, didn't generate/assign every task associated with this story
           name: 'Homepage',
           description: 'That young homepage',
           businessValue: 13,
-            // represents urgency/importance to project
-            // effort value defined by tasks
+          // represents urgency/importance to project
+          // effort value defined by tasks
           tasks: [] // array of associated task IDs
         },
         tasks: {
@@ -360,6 +363,7 @@ async function initializeDbDev() {
   };
 
   // ensure that tables are empty
+  /* eslint-disable no-empty */
   try {
     await db.dropCollectionInDB('members');
   } catch (err) { }
@@ -367,11 +371,12 @@ async function initializeDbDev() {
   try {
     await db.dropCollectionInDB('projects');
   } catch (err) { }
+  /* eslint-enable no-empty */
 
-  const memberPopulationPromises = sampleMembers.map(m => db.addMember(m));
-  const projectPopulationPromises = sampleProjects.map(p => db.addProject(p));
+  const memberPopulationPromises = Object.values(sampleMembers).map(m => db.addMember(m));
+  const projectPopulationPromises = Object.values(sampleProjects).map(p => db.addProject(p));
 
   await Promise.all([...memberPopulationPromises, ...projectPopulationPromises]);
 
-  console.log("Finished populating database with sample data");
+  console.log('Finished populating database with sample data');
 }
