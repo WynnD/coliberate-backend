@@ -45,7 +45,7 @@ class ColiberateDbWrapper {
     return new Promise((fulfill, reject) => {
       this.getDatabaseInstance()
         .then(db => {
-          db.collection(collectionName).insertOne(entity, (err, res) => {
+          db.collection(collectionName).insertOne(entity, (err/*, res*/) => {
             if (err) {
               reject(err);
             } else {
@@ -63,12 +63,12 @@ class ColiberateDbWrapper {
           db.collection(collectionName)
             .find(query, fieldsToExclude)
             .toArray((err, result) => {
-            if (err) {
-              reject(err);
-            } else {
-              fulfill(result);
-            }
-          });
+              if (err) {
+                reject(err);
+              } else {
+                fulfill(result);
+              }
+            });
         }).catch(reject);
     });
   }
@@ -160,8 +160,7 @@ class ColiberateDbWrapper {
 
   async updateMember(member = {}){
     await this.deleteMember({id: member.id});
-    await this.addMember(memeber);
-    ;
+    await this.addMember(member);
   }
 
   async findMember(query, fieldsToExclude = { password: 0 }) {
@@ -260,25 +259,6 @@ class ColiberateDbWrapper {
     await this.addFeature(projectID, newFeature);
   }
 
-  async addRelease(projectID, newRelease) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
-      project.releases[newRelease.id] = newRelease;
-      return { releases: project.releases };
-    });
-  }
-
-  async deleteRelease(projectID, releaseID) {
-    await this.updateInDB('projects', { id: projectID }, (project) => {
-      delete project.releases[releaseID];
-      return { releases: project.releases };
-    });
-  }
-
-  async updateRelease(projectID, newRelease){
-    await this.deleteRelease(projectID, newRelease.id);
-    await this.addRelease(projectID, newRelease);
-  }
-
   async addSprint(projectID, newSprint) {
     return await this.updateInDB('projects', { id: projectID }, (project) => {
       project.sprints[newSprint.id] = newSprint;
@@ -297,31 +277,6 @@ class ColiberateDbWrapper {
     await this.deleteSprint(projectID, newSprint.id);
     await this.addSprint(projectID, newSprint);
   }
-
-
-  // async addFeature(projectID, feature) {
-  //   return await this.insertFeatureInDB(projectID, feature);
-  // }
-
-
-  // insertFeatureInDB(projectID, newStory) {
-  //   return new Promise(async (fulfill, reject) => {
-  //     const projectStories = await this.getStories(projectID);
-  //     projectStories[newStory.id] = newStory;
-
-  //     this.getDatabaseInstance()
-  //       .then(db => {
-  //         db.collection('projects')
-  //           .updateOne({ id: projectID }, { $set: { stories: projectStories } }, (err, res) => {
-  //             if (err) {
-  //               reject(err);
-  //             } else {
-  //               fulfill(res);
-  //             }
-  //           });
-  //       }).catch(reject);
-  //   });
-  // }
 
   async closeConnection() {
     const dbInstance = await this.getDatabaseInstance();
