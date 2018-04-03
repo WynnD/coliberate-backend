@@ -158,9 +158,18 @@ class ColiberateDbWrapper {
     return await this.deleteInDB('members', query);
   }
 
+  async updateMember(member = {}){
+    await this.deleteMember({id: member.id});
+    await this.addMember(memeber);
+    ;
+  }
+
   async findMember(query, fieldsToExclude = { password: 0 }) {
     return await this.findInDB('members', query, fieldsToExclude);
   }
+
+
+
 
   // checks for valid fields
   isValidProject(project) {
@@ -207,6 +216,88 @@ class ColiberateDbWrapper {
       return { stories: project.stories };
     });
   }
+
+  async updateStory(projectID, newStory){
+    await this.deleteStory(projectID, newStory.id);
+    await this.addStory(projectID, newStory);
+  }
+
+  async addRelease(projectID, newRelease) {
+    return await this.updateInDB('projects', { id: projectID }, (project) => {
+      project.releases[newRelease.id] = newRelease;
+      return { releases: project.releases };
+    });
+  }
+
+  async deleteRelease(projectID, releaseID) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      delete project.releases[releaseID];
+      return { releases: project.releases };
+    });
+  }
+
+  async updateRelease(projectID, newRelease){
+    await this.deleteRelease(projectID, newRelease.id);
+    await this.addRelease(projectID, newRelease);
+  }
+
+  async addFeature(projectID, newFeature) {
+    return await this.updateInDB('projects', { id: projectID }, (project) => {
+      project.features[newFeature.id] = newFeature;
+      return { features: project.features };
+    });
+  }
+
+  async deleteFeature(projectID, releaseID) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      delete project.features[releaseID];
+      return { releases: project.releases };
+    });
+  }
+
+  async updateFeature(projectID, newFeature){
+    await this.deleteFeature(projectID, newFeature.id);
+    await this.addFeature(projectID, newFeature);
+  }
+
+  async addRelease(projectID, newRelease) {
+    return await this.updateInDB('projects', { id: projectID }, (project) => {
+      project.releases[newRelease.id] = newRelease;
+      return { releases: project.releases };
+    });
+  }
+
+  async deleteRelease(projectID, releaseID) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      delete project.releases[releaseID];
+      return { releases: project.releases };
+    });
+  }
+
+  async updateRelease(projectID, newRelease){
+    await this.deleteRelease(projectID, newRelease.id);
+    await this.addRelease(projectID, newRelease);
+  }
+
+  async addSprint(projectID, newSprint) {
+    return await this.updateInDB('projects', { id: projectID }, (project) => {
+      project.sprints[newSprint.id] = newSprint;
+      return { sprints: project.sprints };
+    });
+  }
+
+  async deleteSprint(projectID, sprintID) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      delete project.sprints[sprintID];
+      return { sprints: project.sprints };
+    });
+  }
+
+  async updateSprint(projectID, newSprint){
+    await this.deleteSprint(projectID, newSprint.id);
+    await this.addSprint(projectID, newSprint);
+  }
+
 
   // async addFeature(projectID, feature) {
   //   return await this.insertFeatureInDB(projectID, feature);
