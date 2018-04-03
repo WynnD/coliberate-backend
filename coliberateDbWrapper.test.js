@@ -5,13 +5,15 @@ const url = 'mongodb://localhost:27017';
 const db = new dbWrapper(url, 'coliberate-test');
 
 beforeEach(async () => {
+  /* eslint-disable no-empty */
   try {
     await db.dropCollectionInDB('members');
-  } catch (err) {}
+  } catch (err) { }
 
   try {
     await db.dropCollectionInDB('projects');
   } catch (err) { }
+  /* eslint-enable no-empty */
 });
 
 test('connects to mongo server', async () => {
@@ -71,10 +73,11 @@ test('Adding and removing a story into a project in the database', async () =>{
         name: 'story name1',
         description: 'story description',
         tasks: [
-        {
-          id: 'task-id',
-          status: 'todo/in-progress/done',
-        }],
+          {
+            id: 'task-id',
+            status: 'todo/in-progress/done',
+          }
+        ],
       }
     },
     releases: [],
@@ -85,14 +88,15 @@ test('Adding and removing a story into a project in the database', async () =>{
   await db.addProject(project);
   
   const story1 = {
-      id: 'story-id',
-      name: 'story name',
-      description: 'story description',
-      tasks: [
+    id: 'story-id',
+    name: 'story name',
+    description: 'story description',
+    tasks: [
       {
         id: 'task-id',
         status: 'todo/in-progress/done',
-      }],
+      },
+    ],
   };
   
   await db.addStory(project.id, story1);
@@ -103,6 +107,7 @@ test('Adding and removing a story into a project in the database', async () =>{
   searchProject = await db.findProject({ id: project.id });
   expect(searchProject[0].stories[story1.id]).toBeUndefined();
 
+  // eslint-disable-next-line no-console
   console.log('SearchResult = ' + JSON.stringify(searchProject));
 });
 
