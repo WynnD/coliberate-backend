@@ -1,0 +1,56 @@
+POST /register
+	-> accountData (member object)
+	<- Code 200, data: member object (from DB)
+	<- Code 400, error: Error message (e.g. invalid object)
+POST /login
+	-> username, password
+	<- Code 200, data: member object (from DB)
+	<- Code 403, error: Error message (e.g. invalid login)
+
+GET /members/:id?
+	-> id (optional)
+	<- Code 200, data: array of member objects (all or 1 based on ID)
+POST /members (alias for /register)
+	* add a member
+	-> accountData
+DELETE /members/:id
+	* delete a member
+	-> id (required)
+	<- Code 200
+	<- Code 400, error: 'ID doesn't exist', permission error (?)
+
+GET /projects/:id?
+	* get all projects that member_id is part of
+	* get specific project based on given id that member_id is part of
+	-> member_id (required), id (optional)
+	<- Code 403, error: 'No member ID specified'
+	<- Code 200, data: array of project objects (all part of member_id, or 1 if project ID is specified)
+POST /projects
+	* add a project to DB
+	-> projectData (project object)
+	<- Code 400, error: Error message (e.g. invalid object)
+	<- Code 200, data: project object (from DB)
+	<- Code 500, error: 'multiple projects found with same ID' (shouldn't happen)
+DELETE /projects/:id
+	* delete a project
+	-> id (required)
+	<- Code 200
+	<- Code 400, error: 'ID doesn't exist', permission error (?)
+
+GET /projects/:id/releases/:release_id?
+	* get all releases of a given project
+	* get a specific release
+	-> member_id (required), id (required), release_id (optional)
+	<- Code 403, error: 'No member ID specified'
+	<- Code 200, data: object of releases in a project (all part of member_id, or 1 if release ID is specified)
+POST /projects/:id/releases
+	* add a release to a project
+	-> member_id, project_id, releaseData (release object)
+	<- Code 400, error: Error message (e.g. invalid object)
+	<- Code 200, data: release object (from DB)
+	<- Code 500, error: 'multiple releases found with same ID' (shouldn't happen)
+DELETE /projects/:id/releases/:release_id
+	* delete a release
+	-> id (required), release_id (required)
+	<- Code 200
+	<- Code 400, error: 'ID doesn't exist', permission error (?)
