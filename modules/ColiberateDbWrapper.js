@@ -217,9 +217,26 @@ class ColiberateDbWrapper {
     });
   }
 
-  async updateStory(projectID, newStory){
+  async updateStory(projectID, newStory) {
     await this.deleteStory(projectID, newStory.id);
     await this.addStory(projectID, newStory);
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  getInvalidFieldsForRelease(release, projectID) {
+    const expectedFields = ['id', 'name', 'description', 'startDate', 'endDate', 'sprints', 'features'];
+    if (typeof release !== 'object') {
+      return expectedFields;
+    }
+
+    // TODO: provide better validation, especially with using projectID
+    const invalidFields = expectedFields.filter(f => !release[f]);
+    return invalidFields;
+  }
+
+  // checks for valid fields
+  isValidRelease(release, projectID) {
+    return this.getInvalidFieldsForRelease(release, projectID).length === 0;
   }
 
   async addRelease(projectID, newRelease) {
