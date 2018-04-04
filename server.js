@@ -154,14 +154,16 @@ app.route('/api/projects/:id?')
     const memberID = req.query.member_id;
     const projectID = req.params.id;
 
-    if (memberID === undefined || isNaN(memberID)) {
+    if (memberID === undefined) {
       res.status(403).send({ error: 'No member ID specified' });
     } else {
-      console.log({ memberID });
-      const query = { members: { $elemMatch: { memberID: memberID } } };
+      const query = {};
+      // query[`members.${memberID}.id`] = memberID;
+      query[`members.${memberID}`] = { $exists: true };
       if (projectID) {
         query.id = projectID;
       }
+      console.log(query);
       const data = await db.findProject(query);
       res.status(200).send(data);
     }
@@ -199,6 +201,44 @@ app.route('/api/projects/:id?')
           });
         } else {
           res.status(500).send({ error: 'Array length > 0' });
+        }
+      }
+    }
+  });
+
+app.route('/api/projects/:project_id/releases/:release_id?')
+  .get(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.project_id;
+    const releaseID = req.params.release_id;
+
+    console.log({ memberID, projectID, releaseID });
+
+    if (memberID === undefined) {
+      res.status(403).send({ error: 'No member ID specified' });
+    } else if (projectID === undefined) {
+      res.status(403).send({ error: 'No project ID specified' });
+    } else {
+      const query = {};
+      // query[`members.${memberID}.id`] = memberID;
+      query[`members.${memberID}`] = { $exists: true };
+      if (projectID) {
+        query.id = projectID;
+      }
+      console.log(query);
+      const data = await db.findProject(query);
+      if (data.length === 0) {
+        return res.status(404).send({ error: 'Project not found' });
+      } else {
+        const releases = data[0].releases;
+        if (releaseID !== undefined) {
+          if (releases[releaseID]) {
+            return res.status(200).send(releases[releaseID]);
+          } else {
+            return res.status(404).send({ error: 'Release not found' });
+          }
+        } else {
+          return res.status(200).send(releases);
         }
       }
     }
@@ -294,8 +334,8 @@ async function initializeDbDev() {
       members: {
         // 1+ members must be in collection when adding
         // at least one member must be scrum master or product owner
-        'member-id1': {
-          id: 'member-id1',
+        'jsmith-12313': {
+          id: 'jsmith-12313',
           role: 'Scrum Master/Product Owner/Developer Team'
           // role must be one of these
           // customRoles: [] // to implement later - #SLACK
