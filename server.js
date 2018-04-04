@@ -252,9 +252,10 @@ app.route('/api/projects/:project_id/releases/:release_id?')
       }
     });
 
-    console.log('releaseRegisterHandler: Received', { releaseData, projectID });
+    console.log('releaseRegisterHandler: Received', { releaseData, projectID, memberID });
 
-    const projectSearch = getProjectsForMember(memberID, projectID);
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+    console.log({ projectSearch });
     if (projectSearch.length === 0) {
       res.status(404).send({ error: 'Project not found for given member' });
     } else if (!db.isValidRelease(releaseData, projectID)) {
@@ -291,6 +292,10 @@ async function onServerReady() {
 
 async function initializeDbDev() {
   console.log('Populating database with sample data');
+  // 1 week in ms = 7 days * 24 hr/day * 60 min/hr * 60 sec/min * 1000 ms/sec
+  const oneDay = 24 * 60 * 60 * 1000;
+  const oneWeek = 7 * oneDay;
+  const currentDate = new Date();
   const sampleMembers = {
     'jsmith-12313': {
       id: 'jsmith-12313',
@@ -379,7 +384,7 @@ async function initializeDbDev() {
           // format of start/end date doesn't matter as long as new Date() can parse it
           // startDate < endDate
           features: [], // array of feature IDs
-          sprints: [] // array of sprint IDs
+          sprints: ['sprint1-41245'] // array of sprint IDs
         }
       },
       sprints: {
@@ -428,7 +433,14 @@ async function initializeDbDev() {
           takenBy: [] //array of member IDs
         },
       },
-      auditLog: 'auditLog-id',
+      // auditLog: 'auditLog-id',
+      auditLog: [
+        {
+          date: new Date(currentDate.valueOf() - oneWeek).toGMTString(),
+          members: ['jsmith-12313'], // array of member IDs involved in logged action
+          description: 'Project Created by <b>John Smith</b>' // probably generated server side based on what's changed
+        }
+      ],
       pointHistory: 'pointHistory-id',
       defaultSprintLength: 14
     }, // end project object
