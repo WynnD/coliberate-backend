@@ -55,7 +55,9 @@ async function memberRegisterHandler(req, res) {
   console.log('memberRegisterHandler: Received', { accountData });
 
   if (!db.isValidMember(accountData)) {
-    res.status(400).send({ error: 'Invalid fields' });
+    const missingFields = db.getInvalidFieldsForMember(accountData);
+    const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+    res.status(400).send({ error: errorMessage });
   } else {
     // check if member ID and/or login exists
     const idSearch = await db.findMember({ id: accountData.id });
@@ -176,7 +178,9 @@ app.route('/api/projects/:id?')
     console.log('projectRegisterHandler: Received', { projectData }, projectData.members);
 
     if (!db.isValidProject(projectData)) {
-      res.status(400).send({ error: 'Invalid fields' });
+      const missingFields = db.getInvalidFieldsForProject(projectData);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      res.status(400).send({ error: errorMessage });
     } else {
       // check if member ID and/or login exists
       const idSearch = await db.findProject({ id: projectData.id });
@@ -344,16 +348,16 @@ async function initializeDbDev() {
           // effort value defined by tasks
           tasks: [] // array of associated task IDs
         },
-        tasks: {
-          'make-header': {
-            id: 'make-header',
-            status: 'in-progress',
-            // status must be one of these
-            name: 'Make header',
-            description: 'Make that young header',
-            points: 3,
-            takenBy: [] //array of member IDs
-          },
+      },
+      tasks: {
+        'make-header': {
+          id: 'make-header',
+          status: 'in-progress',
+          // status must be one of these
+          name: 'Make header',
+          description: 'Make that young header',
+          points: 3,
+          takenBy: [] //array of member IDs
         },
       },
       auditLog: 'auditLog-id',

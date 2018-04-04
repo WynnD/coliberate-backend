@@ -130,25 +130,27 @@ class ColiberateDbWrapper {
     });
   }
 
-  // checks for valid fields
-  isValidMember(member) {
+  getInvalidFieldsForMember(member) {
+    const expectedFields = ['id','name','description','email','password','username','skills'];
     if (typeof member !== 'object') {
-      return false;
-    } else {
-      const expectedFields = ['username', 'password', 'id', 'name', 'email', 'name'];
-      const hasAMissingField = expectedFields.filter(f => !member[f]).length > 0;
-      
-      if (hasAMissingField) {
-        return false;
-      }
+      return expectedFields;
     }
 
-    return true;
+    // TODO: provide better validation
+    const invalidFields = expectedFields.filter(f => !member[f]);
+    return invalidFields;
+  }
+
+  // checks for valid fields
+  isValidMember(member) {
+    return this.getInvalidFieldsForMember(member).length === 0;
   }
 
   async addMember(member = {}) {
     if (!this.isValidMember(member)) {
-      throw Error('Invalid member');
+      const missingFields = this.getInvalidFieldsForMember(member);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      throw Error(errorMessage);
     } else {
       await this.insertOneIntoDB('members', member);
     }
@@ -167,28 +169,27 @@ class ColiberateDbWrapper {
     return await this.findInDB('members', query, fieldsToExclude);
   }
 
+  getInvalidFieldsForProject(project) {
+    const expectedFields = ['id', 'name', 'description', 'members', 'releases', 'sprints', 'features', 'stories', 'tasks', 'pointHistory', 'auditLog', 'defaultSprintLength'];
+    if (typeof project !== 'object') {
+      return expectedFields;
+    }
 
-
+    // TODO: provide better validation
+    const invalidFields = expectedFields.filter(f => !project[f]);
+    return invalidFields;
+  }
 
   // checks for valid fields
   isValidProject(project) {
-    if (typeof project !== 'object') {
-      return false;
-    } else {
-      const expectedFields = ['name', 'description', 'id', 'members', 'startdate', 'releases', 'sprints', 'tasks'];
-      const hasAMissingField = expectedFields.filter(f => !project[f]).length > 0;
-
-      if (hasAMissingField) {
-        return false;
-      }
-    }
-
-    return true;
+    return this.getInvalidFieldsForProject(project).length === 0;
   }
 
   async addProject(project = {}) {
     if (!this.isValidProject(project)) {
-      throw Error('Invalid project');
+      const missingFields = this.getInvalidFieldsForProject(project);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      throw Error(errorMessage);
     } else {
       await this.insertOneIntoDB('projects', project);
     }
