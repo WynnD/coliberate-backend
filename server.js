@@ -86,6 +86,18 @@ async function memberRegisterHandler(req, res) {
   }
 }
 
+async function getProjectsForMember(memberID, projectID) {
+  const query = {};
+  // query[`members.${memberID}.id`] = memberID;
+  query[`members.${memberID}`] = { $exists: true };
+  if (projectID) {
+    query.id = projectID;
+  }
+  // console.log(query);
+  const data = await db.findProject(query);
+  return data;
+}
+
 app.post('/api/register', memberRegisterHandler);
 
 app.post('/api/login', async (req, res) => {
@@ -157,14 +169,7 @@ app.route('/api/projects/:id?')
     if (memberID === undefined) {
       res.status(403).send({ error: 'No member ID specified' });
     } else {
-      const query = {};
-      // query[`members.${memberID}.id`] = memberID;
-      query[`members.${memberID}`] = { $exists: true };
-      if (projectID) {
-        query.id = projectID;
-      }
-      console.log(query);
-      const data = await db.findProject(query);
+      const data = await getProjectsForMember(memberID, projectID);
       res.status(200).send(data);
     }
   }).post(async (req, res) => {
@@ -219,14 +224,7 @@ app.route('/api/projects/:project_id/releases/:release_id?')
     } else if (projectID === undefined) {
       res.status(403).send({ error: 'No project ID specified' });
     } else {
-      const query = {};
-      // query[`members.${memberID}.id`] = memberID;
-      query[`members.${memberID}`] = { $exists: true };
-      if (projectID) {
-        query.id = projectID;
-      }
-      console.log(query);
-      const data = await db.findProject(query);
+      const data = await getProjectsForMember(memberID, projectID);
       if (data.length === 0) {
         return res.status(404).send({ error: 'Project not found' });
       } else {
