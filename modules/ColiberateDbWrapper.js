@@ -14,7 +14,7 @@ class ColiberateDbWrapper {
 
   getConnectionInstance() {
     return new Promise((fulfill, reject) => {
-      if (!this.instance) {
+      if (!this.connectInstance) {
         this.MongoClient.connect(this.url, (err, instance) => {
           if (err) {
             reject(err);
@@ -296,11 +296,18 @@ class ColiberateDbWrapper {
     await this.addSprint(projectID, newSprint);
   }
 
-  async closeConnection() {
-    const dbInstance = await this.getDatabaseInstance();
-    dbInstance.close();
-    this.dbInstance = null;
-    this.connectInstance = null;
+  closeConnection () {
+    return new Promise(async (fulfill, reject) => {
+      try {
+        const connectInstance = await this.getConnectionInstance();
+        connectInstance.close();
+        this.dbInstance = null;
+        this.connectInstance = null;
+        fulfill();
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 }
 

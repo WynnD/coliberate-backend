@@ -1,10 +1,17 @@
+// outputs any remaining connections every 30 seconds, if any
+require('leaked-handles').set({
+  fullStack: true, // use full stack traces
+  timeout: 30000, // run every 30 seconds instead of 5.
+  debugSockets: true // pretty print tcp thrown exceptions.
+});
+
 const dbWrapper = require('./modules/ColiberateDbWrapper');
 
 const url = 'mongodb://localhost:27017';
 
 const db = new dbWrapper(url, 'coliberate-test');
 
-beforeEach(async () => {
+async function emptyDatabase() {
   /* eslint-disable no-empty */
   try {
     await db.dropCollectionInDB('members');
@@ -14,6 +21,10 @@ beforeEach(async () => {
     await db.dropCollectionInDB('projects');
   } catch (err) { }
   /* eslint-enable no-empty */
+}
+
+beforeEach(async () => {
+  await emptyDatabase();
 });
 
 test('connects to mongo server', async () => {
@@ -175,4 +186,9 @@ test('adding and removing a project in the database', async () => {
 
   searchResult = await db.findProject({ id: project.id });
   expect(searchResult.length).toBe(0);
+});
+
+afterAll(async () => {
+  await emptyDatabase();
+  await db.closeConnection();
 });
