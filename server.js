@@ -329,7 +329,8 @@ async function initializeDbDev() {
           name: 'Perl',
           interested: true,
           experience: 0
-        },{
+        },
+        {
           name: 'C++',
           interested: true,
           experience: 2
@@ -364,11 +365,13 @@ async function initializeDbDev() {
       username: 'jeffrey@gmail.com',
       password: 'password',
       joinDate: '2018-02-25',
-      skills: {
-        name: 'Java',
-        interested: true, // boolean indicating whether or not the user is interested in learning with this
-        experience: 0 // 0 - no experience, 1 - some experience, 2 - high level experience
-      }
+      skills: [
+        {
+          name: 'Java',
+          interested: true, // boolean indicating whether or not the user is interested in learning with this
+          experience: 0 // 0 - no experience, 1 - some experience, 2 - high level experience
+        }
+      ]
     },
     'member-1': {
       id: 'member-1',
@@ -378,11 +381,13 @@ async function initializeDbDev() {
       email: 'wendy@gmail.com',
       username: 'wendy@gmail.com',
       password: 'password',
-      skills: {
-        name: 'C++',
-        interested: true, // boolean indicating whether or not the user is interested in learning with this
-        experience: 2 // 0 - no experience, 1 - some experience, 2 - high level experience
-      }
+      skills: [
+        {
+          name: 'C++',
+          interested: true, // boolean indicating whether or not the user is interested in learning with this
+          experience: 2 // 0 - no experience, 1 - some experience, 2 - high level experience
+        }
+      ]
     }
   };
 
