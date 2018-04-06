@@ -170,7 +170,15 @@ app.route('/api/projects/:id?')
       res.status(403).send({ error: 'No member ID specified' });
     } else {
       const data = await getProjectsForMember(memberID, projectID);
-      res.status(200).send(data);
+      if (projectID) {
+        if (data[0]) {
+          res.status(200).send(data[0]);
+        } else {
+          res.status(404).send({ error: 'Project not found' });
+        }
+      } else {
+        res.status(200).send(data);
+      }
     }
   }).post(async (req, res) => {
     const projectData = req.body.projectData;
@@ -198,15 +206,8 @@ app.route('/api/projects/:id?')
         res.status(400).send({ error: 'ID already exists. Try again under a different name.' });
       } else {
         await db.addProject(projectData);
-        const data = await db.findProject({ id: projectData.id });
-        if (data.length === 1) {
-          res.status(200).send({
-            status: 200,
-            data: data[0]
-          });
-        } else {
-          res.status(500).send({ error: 'Array length > 0' });
-        }
+        // const projects = await db.findProject({ id: projectData.id });
+        return res.sendStatus(200);
       }
     }
   });

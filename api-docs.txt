@@ -24,7 +24,9 @@ GET /projects/:id?
 	* get specific project based on given id that member_id is part of
 	-> member_id (required), id (optional)
 	<- Code 403, error: 'No member ID specified'
-	<- Code 200, data: array of project objects (all part of member_id, or 1 if project ID is specified)
+	<- Code 200, data: project object if project ID is specified
+	<- Code 404, error: 'Project not found' if projectID is specified
+	<- Code 200, data: array of project objects that member_id is a part of
 POST /projects
 	* add a project to DB
 	-> projectData (project object)
