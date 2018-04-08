@@ -277,6 +277,23 @@ class ColiberateDbWrapper {
     await this.addFeature(projectID, newFeature);
   }
 
+  // eslint-disable-next-line no-unused-vars
+  getInvalidFieldsForSprint(sprint, projectID) {
+    const expectedFields = ['id', 'name', 'startDate', 'endDate', 'stories', 'tasks']
+    if (typeof release !== 'object') {
+      return expectedFields;
+    }
+
+    // TODO: provide better validation, especially with using projectID
+    const invalidFields = expectedFields.filter(f => !sprint[f]);
+    return invalidFields;
+  }
+
+  // checks for valid fields
+  isValidSprint(sprint, projectID) {
+    return this.getInvalidFieldsForSprint(sprint, projectID).length === 0;
+  }
+
   async addSprint(projectID, newSprint) {
     return await this.updateInDB('projects', { id: projectID }, (project) => {
       project.sprints[newSprint.id] = newSprint;

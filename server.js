@@ -346,7 +346,7 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
     });
 
     const projectSearch = await getProjectsForMember(memberID, projectID);
-    console.log({ projectSearch});
+    console.log({ projectSearch });
     if (projectSearch.length === 0) {
       res.status(404).send({
         error: 'Project not found for given member'
@@ -354,9 +354,7 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
     } else if (!db.isValidSprint(sprintData, projectID)) {
       const missingFields = db.getInvalidFieldsForSprint(sprintData, projectID);
       const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
-      res.status(400).send({
-        error: errorMessage
-      });
+      res.status(400).send({ error: errorMessage });
     } else {
       const projectData = projectSearch[0];
       const projectSprintData = projectData.sprints;
