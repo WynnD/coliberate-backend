@@ -211,6 +211,8 @@ class ColiberateDbWrapper {
   }
 
   async deleteStory(projectID, storyID) {
+    // eslint-disable-next-line no-console
+    console.log('TODO: update anything related to this story');
     await this.updateInDB('projects', { id: projectID }, (project) => {
       delete project.stories[storyID];
       return { stories: project.stories };
@@ -247,6 +249,8 @@ class ColiberateDbWrapper {
   }
 
   async deleteRelease(projectID, releaseID) {
+    // eslint-disable-next-line no-console
+    console.log('TODO: update anything related to this release');
     await this.updateInDB('projects', { id: projectID }, (project) => {
       delete project.releases[releaseID];
       return { releases: project.releases };
@@ -266,6 +270,8 @@ class ColiberateDbWrapper {
   }
 
   async deleteFeature(projectID, releaseID) {
+    // eslint-disable-next-line no-console
+    console.log('TODO: update anything related to this feature');
     await this.updateInDB('projects', { id: projectID }, (project) => {
       delete project.features[releaseID];
       return { releases: project.releases };
@@ -302,6 +308,8 @@ class ColiberateDbWrapper {
   }
 
   async deleteSprint(projectID, sprintID) {
+    // eslint-disable-next-line no-console
+    console.log('TODO: update anything related to this sprint');
     await this.updateInDB('projects', { id: projectID }, (project) => {
       delete project.sprints[sprintID];
       return { sprints: project.sprints };
