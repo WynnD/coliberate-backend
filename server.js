@@ -286,6 +286,90 @@ app.route('/api/projects/:project_id/releases/:release_id?')
     }
   });
 
+app.route('/api/projects/:project_id/sprints/:sprint_id?')
+  .get(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.project_id;
+    const sprintID = req.params.sprint_id;
+
+    console.log({
+      memberID,
+      projectID,
+      sprintID
+    });
+
+    if (memberID === undefined) {
+      res.status(403).send({
+        error: 'No member ID specified'
+      });
+    } else if (projectID === undefined) {
+      res.status(403).send({
+        error: 'No project ID specified'
+      });
+    } else {
+      const data = await getProjectsForMember(memberID, projectID);
+      if (data.length === 0) {
+        return res.status(404).send({
+          error: 'Project not found'
+        });
+      } else {
+        const sprints = data[0].sprints;
+        if (sprintID !== undefined) {
+          if (sprints[sprintID]) {
+            return res.status(200).send(sprints[sprintID]);
+          } else {
+            return res.status(404).send({
+              error: 'Sprint not found'
+            });
+          }
+        } else {
+          return res.status(200).send(sprints);
+        }
+      }
+    }
+  }).post(async (req, res) => {
+    const sprintData = req.body.sprintData;
+    const projectID = req.body.projectID;
+    const memberID = req.body.memberID;
+
+    const expectedEmptyFields = ['stories', 'tasks'];
+    expectedEmptyFields.forEach(f => {
+      if (!sprintData[f]) {
+        sprintData[f] = [];
+      }
+    });
+
+    console.log('releaseRegisterHandler: Received', {
+      sprintData,
+      projectID,
+      memberID
+    });
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+    console.log({ projectSearch});
+    if (projectSearch.length === 0) {
+      res.status(404).send({
+        error: 'Project not found for given member'
+      });
+    } else if (!db.isValidSprint(sprintData, projectID)) {
+      const missingFields = db.getInvalidFieldsForSprint(sprintData, projectID);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      res.status(400).send({
+        error: errorMessage
+      });
+    } else {
+      const projectData = projectSearch[0];
+      const projectSprintData = projectData.sprints;
+      if (projectSprintData[sprintData.id]) {
+        return res.status(404).send({
+          error: 'Sprint ID already exists.'
+        });
+      }
+      await db.addSprint(projectID, sprintData);
+      res.sendStatus(200);
+    }
+  });
+
 // eslint-disable-next-line no-unused-vars
 let server;
 if (argv.ip !== '127.0.0.1') {
