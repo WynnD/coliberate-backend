@@ -170,44 +170,57 @@ app.route('/api/projects/:id?')
       res.status(403).send({ error: 'No member ID specified' });
     } else {
       const data = await getProjectsForMember(memberID, projectID);
-      res.status(200).send(data);
+      if (projectID) {
+        if (data[0]) {
+          res.status(200).send(data[0]);
+        } else {
+          res.status(404).send({ error: 'Project not found' });
+        }
+      } else {
+        res.status(200).send(data);
+      }
     }
   }).post(async (req, res) => {
     const projectData = req.body.projectData;
-
-    const expectedEmptyFields = ['releases', 'sprints', 'tasks'];
-    expectedEmptyFields.forEach(f => {
+    const memberId = req.body.member_id;
+    const expectedEmptyArrays = ['pointHistory', 'auditLog'];
+    const expectedEmptyObjects = ['releases', 'sprints', 'tasks', 'features', 'stories'];
+    expectedEmptyArrays.forEach(f => {
       if (!projectData[f]) {
         projectData[f] = [];
       }
     });
 
-    console.log('projectRegisterHandler: Received', { projectData }, projectData.members);
+    expectedEmptyObjects.forEach(f => {
+      if (!projectData[f]) {
+        projectData[f] = {};
+      }
+    });
+
+    console.log('projectRegisterHandler: Received', { projectData, memberId }, projectData.members);
 
     if (!db.isValidProject(projectData)) {
       const missingFields = db.getInvalidFieldsForProject(projectData);
       const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
-      res.status(400).send({ error: errorMessage });
-    } else {
-      // check if member ID and/or login exists
-      const idSearch = await db.findProject({ id: projectData.id });
+      return res.status(400).send({ error: errorMessage });
+    }
 
-      if (idSearch.length > 0) {
-        // TODO: Add better handling for ID clashing
-        console.log({ idSearch });
-        res.status(400).send({ error: 'ID already exists. Try again under a different name.' });
-      } else {
-        await db.addProject(projectData);
-        const data = await db.findProject({ id: projectData.id });
-        if (data.length === 1) {
-          res.status(200).send({
-            status: 200,
-            data: data[0]
-          });
-        } else {
-          res.status(500).send({ error: 'Array length > 0' });
-        }
-      }
+    projectData.auditLog.push({
+      date: new Date().toGMTString(),
+      members: [memberId], // array of member IDs involved in logged action
+      description: 'Project Created' // probably generated server side based on what's changed
+    });
+    
+    const idSearch = await db.findProject({ id: projectData.id });
+
+    if (idSearch.length > 0) {
+      // TODO: Add better handling for ID clashing
+      console.log({ idSearch });
+      res.status(400).send({ error: 'ID already exists. Try again under a different name.' });
+    } else {
+      await db.addProject(projectData);
+      // const projects = await db.findProject({ id: projectData.id });
+      return res.sendStatus(200);
     }
   });
 
