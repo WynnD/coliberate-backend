@@ -507,8 +507,8 @@ async function initializeDbDev() {
           id: 'release1',
           name: 'Release 1',
           description: 'description of release',
-          startDate: 'date-string',
-          endDate: 'date-string',
+          startDate: new Date(currentDate.valueOf() - oneWeek).toDateString(), // e.g. Mon Mar 12 2018
+          endDate: new Date(new Date().valueOf() + 3 * oneWeek).toDateString(),
           // format of start/end date doesn't matter as long as new Date() can parse it
           // startDate < endDate
           features: ['feature1-12314'], // array of feature IDs
@@ -520,8 +520,8 @@ async function initializeDbDev() {
           // goals are defined by associated tasks and stories
           id: 'sprint1-41245',
           name: 'Sprint 1',
-          startDate: 'date-string', // can't be earlier than associated release
-          endDate: 'date-string',  // can't be later than associated release
+          startDate: new Date(currentDate.valueOf() - oneWeek).toDateString(), // e.g. Mon Mar 12 2018
+          endDate: new Date(new Date().valueOf() + oneWeek).toDateString(),
           stories: ['homepage'], // array of story IDs
           tasks: [] // array of tasks
         }
