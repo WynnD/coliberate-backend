@@ -268,12 +268,10 @@ class ColiberateDbWrapper {
       project.features[newFeature.id] = newFeature;
       return { features: project.features };
     });
-
-    const project = await this.findProject({ id: projectID });
-
     // update associated release too
     if (associatedRelease !== undefined) {
-      const release = project.release[associatedRelease];
+      const project = await this.findProject({ id: projectID });
+      const release = project[0].release[associatedRelease];
       release.features.push(newFeature.id);
       await this.updateRelease(projectID, release);
     }
@@ -290,10 +288,11 @@ class ColiberateDbWrapper {
     });
 
     const project = await this.findProject({ id: projectID });
-    const releases = project.releases;
-    Object.keys(releases).forEach( (key, index) => {
-      if (releases[key].features.includes(featureID)) {
-        releases[key].features.splice(index, 1);
+    const releases = project[0].releases;
+    Object.keys(releases).forEach( (key) => {
+      const featureIndex = releases[key].features.indexOf(featureID);
+      if (featureIndex !== -1) {
+        releases[key].features.splice(featureIndex, 1);
       }
     });
 

@@ -286,6 +286,13 @@ app.route('/api/projects/:project_id/releases/:release_id?')
     }
   });
 
+  app.route('/api/projects/:project_id/features/:feature_id?')
+    .get(async (req, res) => {
+      
+    })
+    .post(async (req, res) => {
+      
+    });
 // eslint-disable-next-line no-unused-vars
 let server;
 if (argv.ip !== '127.0.0.1') {
