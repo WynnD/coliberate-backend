@@ -285,7 +285,7 @@ class ColiberateDbWrapper {
 
   // eslint-disable-next-line no-unused-vars
   getInvalidFieldsForSprint(sprint, projectID, associatedRelease) {
-    const expectedFields = ['id', 'name', 'startDate', 'endDate', 'stories', 'tasks']
+    const expectedFields = ['id', 'name', 'startDate', 'endDate', 'stories', 'tasks'];
     if (typeof sprint !== 'object') {
       return expectedFields;
     }
