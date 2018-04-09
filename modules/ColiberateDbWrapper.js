@@ -262,19 +262,43 @@ class ColiberateDbWrapper {
     await this.addRelease(projectID, newRelease);
   }
 
-  async addFeature(projectID, newFeature) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
+  async addFeature(projectID, newFeature, associatedRelease) {
+    // updates project object to contain new feature
+    await this.updateInDB('projects', { id: projectID }, (project) => {
       project.features[newFeature.id] = newFeature;
       return { features: project.features };
     });
+
+    const project = await this.findProject({ id: projectID });
+
+    // update associated release too
+    if (associatedRelease !== undefined) {
+      const release = project.release[associatedRelease];
+      release.features.push(newFeature.id);
+      await this.updateRelease(projectID, release);
+    }
+
+    return;
   }
 
-  async deleteFeature(projectID, releaseID) {
+  async deleteFeature(projectID, featureID) {
     // eslint-disable-next-line no-console
     console.log('TODO: update anything related to this feature');
     await this.updateInDB('projects', { id: projectID }, (project) => {
-      delete project.features[releaseID];
-      return { releases: project.releases };
+      delete project.features[featureID];
+      return { features: project.features };
+    });
+
+    const project = await this.findProject({ id: projectID });
+    const releases = project.releases;
+    Object.keys(releases).forEach( (key, index) => {
+      if (releases[key].features.includes(featureID)) {
+        releases[key].features.splice(index, 1);
+      }
+    });
+
+    await this.updateInDB('projects', { id: projectID }, () => {
+      return { releases };
     });
   }
 
