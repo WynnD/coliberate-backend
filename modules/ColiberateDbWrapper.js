@@ -284,9 +284,9 @@ class ColiberateDbWrapper {
   }
 
   // eslint-disable-next-line no-unused-vars
-  getInvalidFieldsForSprint(sprint, projectID) {
+  getInvalidFieldsForSprint(sprint, projectID, associatedRelease) {
     const expectedFields = ['id', 'name', 'startDate', 'endDate', 'stories', 'tasks']
-    if (typeof release !== 'object') {
+    if (typeof sprint !== 'object') {
       return expectedFields;
     }
 
@@ -296,15 +296,22 @@ class ColiberateDbWrapper {
   }
 
   // checks for valid fields
-  isValidSprint(sprint, projectID) {
-    return this.getInvalidFieldsForSprint(sprint, projectID).length === 0;
+  isValidSprint(sprint, projectID, associatedRelease) {
+    return this.getInvalidFieldsForSprint(sprint, projectID, associatedRelease).length === 0;
   }
 
-  async addSprint(projectID, newSprint) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
+  async addSprint(projectID, newSprint, associatedRelease) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
       project.sprints[newSprint.id] = newSprint;
       return { sprints: project.sprints };
     });
+    // assumption: existence of related fields checked previously with isValid function
+    const project = await this.findProject({ id: projectID });
+    // console.log({ project }, project.releases)
+    const release = project[0].releases[associatedRelease];
+    release.sprints.push(newSprint.id);
+    // console.log({ release });
+    return await this.updateRelease(projectID, release);
   }
 
   async deleteSprint(projectID, sprintID) {

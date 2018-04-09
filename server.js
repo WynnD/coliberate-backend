@@ -331,6 +331,7 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
     const sprintData = req.body.sprintData;
     const projectID = req.body.projectID;
     const memberID = req.body.memberID;
+    const associatedRelease = req.body.associatedRelease;
 
     const expectedEmptyFields = ['stories', 'tasks'];
     expectedEmptyFields.forEach(f => {
@@ -342,7 +343,8 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
     console.log('releaseRegisterHandler: Received', {
       sprintData,
       projectID,
-      memberID
+      memberID,
+      associatedRelease
     });
 
     const projectSearch = await getProjectsForMember(memberID, projectID);
@@ -351,8 +353,8 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
       res.status(404).send({
         error: 'Project not found for given member'
       });
-    } else if (!db.isValidSprint(sprintData, projectID)) {
-      const missingFields = db.getInvalidFieldsForSprint(sprintData, projectID);
+    } else if (!db.isValidSprint(sprintData, projectID, associatedRelease)) {
+      const missingFields = db.getInvalidFieldsForSprint(sprintData, projectID, associatedRelease);
       const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
       res.status(400).send({ error: errorMessage });
     } else {
@@ -363,7 +365,7 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
           error: 'Sprint ID already exists.'
         });
       }
-      await db.addSprint(projectID, sprintData);
+      await db.addSprint(projectID, sprintData, associatedRelease);
       res.sendStatus(200);
     }
   });
