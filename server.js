@@ -286,13 +286,51 @@ app.route('/api/projects/:project_id/releases/:release_id?')
     }
   });
 
-  app.route('/api/projects/:project_id/features/:feature_id?')
-    .get(async (req, res) => {
-      
-    })
-    .post(async (req, res) => {
-      
-    });
+app.route('/api/projects/:project_id/features/:feature_id?')
+  .get(async (req, res) => {
+    const memberId = req.query.member_id;
+    const projectId = req.params.project_id;
+    const featureId = req.params.feature_id;
+
+    console.log({ memberId, projectId, featureId });
+    
+    let missing_args = [];
+    if (memberId === undefined) {
+      missing_args.push('memberId');
+    }
+    if (projectId === undefined) {
+      missing_args.push('projectId');
+    }
+
+    if (missing_args.length !== 0) {
+      const args = missing_args.join(', ');
+      const error_message = { error: `No ${args} specified` };
+      return res.status(403).send(error_message);
+    } else {
+      const data = await getProjectsForMember(memberId, projectId);
+      if (data.length === 0) {
+        return res.status(404).send({ error: 'Feature not found' });
+      } else if (data[0].features[featureId] === undefined) {
+        return res.status(403).send({ error: 'User not permitted' });
+      } else {
+        const features = data[0].features;
+        if (featureId !== undefined) {
+          const single_feature = features[featureId];
+          if (single_feature !== undefined) {
+            return res.status(200).send(single_feature);
+          } else {
+            return res.status(404).send({ error: 'Feature not found' });
+          }
+        } else {
+          return res.status(200).send(features);
+        }
+      }
+    }
+  })
+  /*
+  .post(async (req, res) => {
+    
+  })*/;
 // eslint-disable-next-line no-unused-vars
 let server;
 if (argv.ip !== '127.0.0.1') {
