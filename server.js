@@ -292,7 +292,7 @@ app.route('/api/projects/:project_id/features/:feature_id?')
     const projectId = req.params.project_id;
     const featureId = req.params.feature_id;
 
-    console.log({ memberId, projectId, featureId });
+    console.log('sending', { memberId, projectId, featureId });
     
     let missing_args = [];
     if (memberId === undefined) {
@@ -326,11 +326,48 @@ app.route('/api/projects/:project_id/features/:feature_id?')
         }
       }
     }
-  })
-  /*
-  .post(async (req, res) => {
-    
-  })*/;
+  }).post(async (req, res) => {
+    const { featureData, associatedReleases, memberID } = req.body;
+    const projectID = req.params.project_id;
+  
+    const expectedEmptyFields = ['features', 'sprints'];
+    expectedEmptyFields.forEach(f => {
+      if (!featureData[f]) {
+        featureData[f] = [];
+      }
+    });
+
+    console.log('recieved', { featureData, associatedReleases, memberID, projectID });
+    const projects = await getProjectsForMember(memberID, projectID);
+    if (projects.length === 0) {
+      return res.statusCode(404).send({ error: `Cannot find project with id '${projectID}' for user ${memberID}`});
+    } else if (!db.isValidFeature(featureData, projectID)) {
+      const missingFields = db.getInvalidFieldsForFeature(featureData, projectID);
+      return res.statusCode(400).send({ error: `Cannot add feature, missing fields: ${missingFields}` });
+    } else {
+      const projectData = projects[0];
+      const projectFeatureData = projectData.features;
+      const projectReleaseData = projectData.releases;
+      if (projectFeatureData[featureData.id]) {
+        return res.statusCode(400).send( {error: `Feature with ID ${featureData.id} already exists` });
+      } else if (!objectContainsKeys(projectReleaseData, associatedReleases)) {
+        const missingReleases = getMissingKeys(projectReleaseData, associatedReleases);
+        return res.statusCode(400).send({ error: `Cannot add feature, associated releases do not exist: ${missingReleases}` });
+      } else {
+        await db.addFeature(projectID, featureData, associatedReleases);
+      }
+    }
+  });
+
+function objectContainsKeys(object, keyArray) {
+  const missingKeys = getMissingKeys(object, keyArray);
+  return missingKeys.length === 0;
+}
+
+function getMissingKeys(object, keyArray) {
+  return keyArray.filter((id) => object[id] === undefined);
+}
+
 // eslint-disable-next-line no-unused-vars
 let server;
 if (argv.ip !== '127.0.0.1') {

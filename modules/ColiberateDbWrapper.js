@@ -262,6 +262,21 @@ class ColiberateDbWrapper {
     await this.addRelease(projectID, newRelease);
   }
 
+  // eslint-disable-next-line no-unused-vars
+  getInvalidFieldsForFeature(featureData, projectID) {
+    const expectedFields = ['id','name','description','stories','tasks'];
+    if (typeof featureData !== 'object') {
+      return expectedFields;
+    }
+
+    const invalidFields = expectedFields.filter(f => !featureData[f]);
+    return invalidFields;
+  }
+
+  isValidFeature(featureData, projectID) {
+    return this.getInvalidFieldsForFeature(featureData, projectID).length === 0;
+  }
+
   async addFeature(projectID, newFeature, associatedRelease) {
     // updates project object to contain new feature
     await this.updateInDB('projects', { id: projectID }, (project) => {
