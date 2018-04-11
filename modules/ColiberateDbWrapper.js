@@ -203,10 +203,44 @@ class ColiberateDbWrapper {
     return await this.findInDB('projects', query, fieldsToExclude);
   }
 
-  async addStory(projectID, newStory) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
+  // eslint-disable-next-line no-unused-vars
+  getInvalidFieldsForStory(target, projectID) {
+    const expectedFields = ['id', 'status', 'name', 'description', 'businessValue', 'tasks'];
+    if (typeof target !== 'object') {
+      return expectedFields;
+    }
+
+    // TODO: provide better validation, especially with using projectID
+    const invalidFields = expectedFields.filter(f => !target[f]);
+    return invalidFields;
+  }
+
+  // checks for valid fields
+  isValidStory(target, projectID) {
+    return this.getInvalidFieldsForStory(target, projectID).length === 0;
+  }
+
+  async addStory(projectID, newStory, associatedFeatures = [], associatedSprints = []) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
       project.stories[newStory.id] = newStory;
       return { stories: project.stories };
+    });
+
+    // assumption: related fields checked previously with isValid function
+    const project = await this.findProject({ id: projectID });
+
+    associatedFeatures.forEach(async (id) => {
+      const feature = project[0].features[id];
+      feature.stories.push(newStory.id);
+      // console.log('updating entry for feature', id);
+      await this.updateFeature(projectID, feature);
+    });
+
+    associatedSprints.forEach(async (id) => {
+      const sprint = project[0].sprints[id];
+      sprint.stories.push(newStory.id);
+      // console.log('updating entry for sprint', id);
+      await this.updateSprint(projectID, sprint);
     });
   }
 
