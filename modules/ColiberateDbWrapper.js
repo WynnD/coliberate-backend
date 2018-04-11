@@ -306,7 +306,7 @@ class ColiberateDbWrapper {
   }*/
 
   getInvalidFieldsForTask(task) {
-    const expectedFields = ['id', 'name', 'members'];
+    const expectedFields = ['id', 'name', 'takenBy', 'status'];
     if (typeof task !== 'object') {
       return expectedFields;
     }
@@ -323,10 +323,34 @@ class ColiberateDbWrapper {
     return this.getInvalidFieldsForTask(task, projectID).length === 0;
   }
 
-  async addTask(projectID, newTask) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
-      project.task[newTask.id] = newTask;
-      return { task: project.tasks };
+  async addTask(projectID, newTask, associatedFeatures = [], associatedSprints = [], associatedStories = []) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      project.tasks[newTask.id] = newTask;
+      return { tasks: project.tasks };
+    });
+
+    // assumption: related fields checked previously with isValid function
+    const project = await this.findProject({ id: projectID });
+
+    associatedFeatures.forEach(async (id) => {
+      const feature = project[0].features[id];
+      feature.tasks.push(newTask.id);
+      // console.log('updating entry for feature', id);
+      await this.updateFeature(projectID, feature);
+    });
+
+    associatedSprints.forEach(async (id) => {
+      const sprint = project[0].sprints[id];
+      sprint.tasks.push(newTask.id);
+      // console.log('updating entry for sprint', id);
+      await this.updateSprint(projectID, sprint);
+    });
+
+    associatedStories.forEach(async (id) => {
+      const story = project[0].stories[id];
+      story.tasks.push(newTask.id);
+      // console.log('updating entry for sprint', id);
+      await this.updateStory(projectID, story);
     });
   }
 
@@ -342,7 +366,7 @@ class ColiberateDbWrapper {
     await this.addRelease(projectID, newRelease);
   }
 
-  async updateTasks(projectID, newTask) {
+  async updateTask(projectID, newTask) {
     await this.deleteTask(projectID, newTask.id);
     await this.addTask(projectID, newTask.id);
   }
