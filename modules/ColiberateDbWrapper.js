@@ -299,6 +299,68 @@ class ColiberateDbWrapper {
     await this.addRelease(projectID, newRelease);
   }
 
+
+  getInvalidFieldsForTask(task) {
+    const expectedFields = ['id', 'name', 'takenBy', 'status'];
+    if (typeof task !== 'object') {
+      return expectedFields;
+    }
+
+    var invalidFields = expectedFields.filter(f => !task[f]);
+    /*if (task.hasOwnProperty('members')) {
+      if (getInvalidMemberForProject(task['member'].length !== 0))
+        invalidFields.push('members');
+    }*/
+    return invalidFields;
+  }
+
+  isValidTask(task, projectID) {
+    return this.getInvalidFieldsForTask(task, projectID).length === 0;
+  }
+
+  async addTask(projectID, newTask, associatedFeatures = [], associatedSprints = [], associatedStories = []) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      project.tasks[newTask.id] = newTask;
+      return { tasks: project.tasks };
+    });
+
+    // assumption: related fields checked previously with isValid function
+    const project = await this.findProject({ id: projectID });
+
+    associatedFeatures.forEach(async (id) => {
+      const feature = project[0].features[id];
+      feature.tasks.push(newTask.id);
+      // console.log('updating entry for feature', id);
+      await this.updateFeature(projectID, feature);
+    });
+
+    associatedSprints.forEach(async (id) => {
+      const sprint = project[0].sprints[id];
+      sprint.tasks.push(newTask.id);
+      // console.log('updating entry for sprint', id);
+      await this.updateSprint(projectID, sprint);
+    });
+
+    associatedStories.forEach(async (id) => {
+      const story = project[0].stories[id];
+      story.tasks.push(newTask.id);
+      // console.log('updating entry for sprint', id);
+      await this.updateStory(projectID, story);
+    });
+  }
+
+  async deleteTask(projectID, taskID) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      delete project.task[taskID];
+      return { task: project.tasks };
+    });
+  }
+
+  async updateTask(projectID, newTask) {
+    await this.deleteTask(projectID, newTask.id);
+    await this.addTask(projectID, newTask.id);
+  }
+
   // eslint-disable-next-line no-unused-vars
   getInvalidFieldsForFeature(featureData, projectID) {
     const expectedFields = ['id','name','description','stories','tasks'];

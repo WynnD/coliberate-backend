@@ -525,7 +525,7 @@ app.route('/api/projects/:project_id/features/:feature_id?')
       const projectReleaseData = projectData.releases;
       if (projectFeatureData[featureData.id]) {
         return res.status(400).send({ error: `Feature with ID ${featureData.id} already exists` });
-      } else if (!objectContainsKeys(projectReleaseData, associatedReleases)) {
+      } else if (associatedReleases && !objectContainsKeys(projectReleaseData, associatedReleases)) {
         const missingReleases = getMissingKeys(projectReleaseData, associatedReleases);
         return res.status(400).send({ error: `Cannot add feature, associated releases do not exist: ${missingReleases}` });
       } else {
@@ -535,12 +535,12 @@ app.route('/api/projects/:project_id/features/:feature_id?')
     }
   });
 
-function objectContainsKeys(object, keyArray) {
+function objectContainsKeys(object, keyArray = []) {
   const missingKeys = getMissingKeys(object, keyArray);
   return missingKeys.length === 0;
 }
 
-function getMissingKeys(object, keyArray) {
+function getMissingKeys(object, keyArray = []) {
   return keyArray.filter((id) => object[id] === undefined);
 }
 
