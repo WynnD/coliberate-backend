@@ -277,18 +277,20 @@ class ColiberateDbWrapper {
     return this.getInvalidFieldsForFeature(featureData, projectID).length === 0;
   }
 
-  async addFeature(projectID, newFeature, associatedRelease) {
+  async addFeature(projectID, newFeature, associatedReleases) {
     // updates project object to contain new feature
     await this.updateInDB('projects', { id: projectID }, (project) => {
       project.features[newFeature.id] = newFeature;
       return { features: project.features };
     });
     // update associated release too
-    if (associatedRelease !== undefined) {
+    if (associatedReleases !== undefined) {
       const project = await this.findProject({ id: projectID });
-      const release = project[0].release[associatedRelease];
-      release.features.push(newFeature.id);
-      await this.updateRelease(projectID, release);
+      associatedReleases.forEach(async (releaseID) => {
+        const release = project[0].releases[releaseID];
+        release.features.push(newFeature.id);
+        await this.updateRelease(projectID, release);
+      });
     }
 
     return;

@@ -330,7 +330,7 @@ app.route('/api/projects/:project_id/features/:feature_id?')
     const { featureData, associatedReleases, memberID } = req.body;
     const projectID = req.params.project_id;
   
-    const expectedEmptyFields = ['features', 'sprints'];
+    const expectedEmptyFields = ['stories', 'tasks'];
     expectedEmptyFields.forEach(f => {
       if (!featureData[f]) {
         featureData[f] = [];
