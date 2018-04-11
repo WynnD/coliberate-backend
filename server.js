@@ -52,6 +52,14 @@ app.get('/data', (req, res) => {
 async function memberRegisterHandler(req, res) {
   const accountData = req.body.accountData;
 
+  if (!accountData.description) {
+    accountData.description = 'No description available';
+  }
+
+  if (!accountData.skills) {
+    accountData.skills = {};
+  }
+
   console.log('memberRegisterHandler: Received', { accountData });
 
   if (!db.isValidMember(accountData)) {
