@@ -544,6 +544,101 @@ function getMissingKeys(object, keyArray) {
   return keyArray.filter((id) => object[id] === undefined);
 }
 
+
+
+app.route('/api/projects/:project_id/tasks/:task_id?')
+  .get(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.project_id;
+    const taskID = req.params.task_id;
+
+    console.log({
+      memberID,
+      projectID,
+      taskID
+    });
+
+    if (memberID === undefined) {
+      res.status(403).send({
+        error: 'No member ID specified'
+      });
+    } else if (projectID === undefined) {
+      res.status(403).send({
+        error: 'No project ID specified'
+      });
+    } else {
+      const data = await getProjectsForMember(memberID, projectID);
+      if (data.length === 0) {
+        return res.status(404).send({
+          error: 'Project not found'
+        });
+      } else {
+        const tasks = data[0].tasks;
+        if (taskID !== undefined) {
+          if (tasks[taskID]) {
+            return res.status(200).send(tasks[taskID]);
+          } else {
+            return res.status(404).send({
+              error: 'Story not found'
+            });
+          }
+        } else {
+          return res.status(200).send(tasks);
+        }
+      }
+    }
+  }).post(async (req, res) => {
+    const taskData = req.body.taskData;
+    const projectID = req.body.projectID;
+    const memberID = req.body.memberID;
+    const associatedFeatures = req.body.associatedFeatures || [];
+    const associatedSprints = req.body.associatedSprints || [];
+    const associatedStories = req.body.associatedStories || [];
+
+    if (!taskData.status) {
+      taskData.status = 'todo';
+    }
+
+    if (!taskData.takenBy) {
+      taskData.takenBy = [];
+    }
+
+    console.log('POST stories: Received', {
+      taskData,
+      projectID,
+      memberID,
+      associatedFeatures,
+      associatedSprints,
+      associatedStories
+    });
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+    console.log({
+      projectSearch
+    });
+    if (projectSearch.length === 0) {
+      res.status(404).send({
+        error: 'Project not found for given member'
+      });
+    } else if (!db.isValidTask(taskData, projectID)) {
+      const missingFields = db.getInvalidFieldsForTask(taskData, projectID);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      res.status(400).send({
+        error: errorMessage
+      });
+    } else {
+      const projectData = projectSearch[0];
+      const projectTaskData = projectData.tasks;
+      if (projectTaskData[taskData.id]) {
+        return res.status(404).send({
+          error: 'Task ID already exists.'
+        });
+      }
+      await db.addTask(projectID, taskData, associatedFeatures, associatedSprints, associatedStories);
+      res.sendStatus(200);
+    }
+  });
+
 // eslint-disable-next-line no-unused-vars
 let server;
 if (argv.ip !== '127.0.0.1') {
