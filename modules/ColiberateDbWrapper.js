@@ -291,12 +291,50 @@ class ColiberateDbWrapper {
     });
   }
 
-  async addTask() {
-
+  /*cmpMembers(member, projectID) {
+    return projectID['member'].filter(f => !member[f]);
   }
 
-  async deleteTask() {
-    
+  getInvalidMemberForProject(member, projectID) {
+    if (this.isValidProject(projectID)) {
+      return projectID;
+    }
+
+    const unexpectedMember = projectID['member'].filter(f => !member[f]);
+    if (unexpectedMember.length !== member.length)
+      
+  }*/
+
+  getInvalidFieldsForTask(task) {
+    const expectedFields = ['id', 'name', 'members'];
+    if (typeof task !== 'object') {
+      return expectedFields;
+    }
+
+    var invalidFields = expectedFields.filter(f => !task[f]);
+    /*if (task.hasOwnProperty('members')) {
+      if (getInvalidMemberForProject(task['member'].length !== 0))
+        invalidFields.push('members');
+    }*/
+    return invalidFields;
+  }
+
+  isValidTask(task, projectID) {
+    return this.getInvalidFieldsForTask(task, projectID).length === 0;
+  }
+
+  async addTask(projectID, newTask) {
+    return await this.updateInDB('projects', { id: projectID }, (project) => {
+      project.task[newTask.id] = newTask;
+      return { task: project.tasks };
+    });
+  }
+
+  async deleteTask(projectID, taskID) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      delete project.task[taskID];
+      return { task: project.tasks };
+    });
   }
 
   async updateRelease(projectID, newRelease){
