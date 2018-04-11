@@ -296,19 +296,59 @@ class ColiberateDbWrapper {
     await this.addRelease(projectID, newRelease);
   }
 
-  async addFeature(projectID, newFeature) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
+  // eslint-disable-next-line no-unused-vars
+  getInvalidFieldsForFeature(featureData, projectID) {
+    const expectedFields = ['id','name','description','stories','tasks'];
+    if (typeof featureData !== 'object') {
+      return expectedFields;
+    }
+
+    const invalidFields = expectedFields.filter(f => !featureData[f]);
+    return invalidFields;
+  }
+
+  isValidFeature(featureData, projectID) {
+    return this.getInvalidFieldsForFeature(featureData, projectID).length === 0;
+  }
+
+  async addFeature(projectID, newFeature, associatedReleases) {
+    // updates project object to contain new feature
+    await this.updateInDB('projects', { id: projectID }, (project) => {
       project.features[newFeature.id] = newFeature;
       return { features: project.features };
     });
+    // update associated release too
+    if (associatedReleases !== undefined) {
+      const project = await this.findProject({ id: projectID });
+      associatedReleases.forEach(async (releaseID) => {
+        const release = project[0].releases[releaseID];
+        release.features.push(newFeature.id);
+        await this.updateRelease(projectID, release);
+      });
+    }
+
+    return;
   }
 
-  async deleteFeature(projectID, releaseID) {
+  async deleteFeature(projectID, featureID) {
     // eslint-disable-next-line no-console
     console.log('TODO: update anything related to this feature');
     await this.updateInDB('projects', { id: projectID }, (project) => {
-      delete project.features[releaseID];
-      return { releases: project.releases };
+      delete project.features[featureID];
+      return { features: project.features };
+    });
+
+    const project = await this.findProject({ id: projectID });
+    const releases = project[0].releases;
+    Object.keys(releases).forEach( (key) => {
+      const featureIndex = releases[key].features.indexOf(featureID);
+      if (featureIndex !== -1) {
+        releases[key].features.splice(featureIndex, 1);
+      }
+    });
+
+    await this.updateInDB('projects', { id: projectID }, () => {
+      return { releases };
     });
   }
 

@@ -515,7 +515,7 @@ app.route('/api/projects/:project_id/features/:feature_id?')
     console.log('recieved', { featureData, associatedReleases, memberID, projectID });
     const projects = await getProjectsForMember(memberID, projectID);
     if (projects.length === 0) {
-      return res.status(404).send({ error: `Cannot find project with id '${projectID}' for user ${memberID}` });
+      return res.status(404).send({ error: `Cannot find project with id '${projectID}' for user ${memberID}`});
     } else if (!db.isValidFeature(featureData, projectID)) {
       const missingFields = db.getInvalidFieldsForFeature(featureData, projectID);
       return res.status(400).send({ error: `Cannot add feature, missing fields: ${missingFields}` });
@@ -543,7 +543,6 @@ function objectContainsKeys(object, keyArray) {
 function getMissingKeys(object, keyArray) {
   return keyArray.filter((id) => object[id] === undefined);
 }
-
 
 // eslint-disable-next-line no-unused-vars
 let server;
