@@ -220,10 +220,27 @@ class ColiberateDbWrapper {
     return this.getInvalidFieldsForStory(target, projectID).length === 0;
   }
 
-  async addStory(projectID, newStory) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
+  async addStory(projectID, newStory, associatedFeatures = [], associatedSprints = []) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
       project.stories[newStory.id] = newStory;
       return { stories: project.stories };
+    });
+
+    // assumption: related fields checked previously with isValid function
+    const project = await this.findProject({ id: projectID });
+
+    associatedFeatures.forEach(async (id) => {
+      const feature = project[0].features[id];
+      feature.stories.push(newStory.id);
+      // console.log('updating entry for feature', id);
+      await this.updateFeature(projectID, feature);
+    });
+
+    associatedSprints.forEach(async (id) => {
+      const sprint = project[0].sprints[id];
+      sprint.stories.push(newStory.id);
+      // console.log('updating entry for sprint', id);
+      await this.updateSprint(projectID, sprint);
     });
   }
 
