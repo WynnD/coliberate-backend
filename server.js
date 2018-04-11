@@ -291,8 +291,6 @@ app.route('/api/projects/:project_id/features/:feature_id?')
     const memberId = req.query.member_id;
     const projectId = req.params.project_id;
     const featureId = req.params.feature_id;
-
-    console.log('sending', { memberId, projectId, featureId });
     
     let missing_args = [];
     if (memberId === undefined) {
@@ -317,6 +315,7 @@ app.route('/api/projects/:project_id/features/:feature_id?')
         if (featureId !== undefined) {
           const single_feature = features[featureId];
           if (single_feature !== undefined) {
+            console.log('sending', { memberId, projectId, featureId });
             return res.status(200).send(single_feature);
           } else {
             return res.status(404).send({ error: 'Feature not found' });
