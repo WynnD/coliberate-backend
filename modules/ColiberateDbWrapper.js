@@ -203,6 +203,23 @@ class ColiberateDbWrapper {
     return await this.findInDB('projects', query, fieldsToExclude);
   }
 
+  // eslint-disable-next-line no-unused-vars
+  getInvalidFieldsForStory(target, projectID) {
+    const expectedFields = ['id', 'status', 'name', 'description', 'businessValue', 'tasks'];
+    if (typeof target !== 'object') {
+      return expectedFields;
+    }
+
+    // TODO: provide better validation, especially with using projectID
+    const invalidFields = expectedFields.filter(f => !target[f]);
+    return invalidFields;
+  }
+
+  // checks for valid fields
+  isValidStory(target, projectID) {
+    return this.getInvalidFieldsForStory(target, projectID).length === 0;
+  }
+
   async addStory(projectID, newStory) {
     return await this.updateInDB('projects', { id: projectID }, (project) => {
       project.stories[newStory.id] = newStory;

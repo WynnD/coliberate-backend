@@ -327,22 +327,27 @@ app.route('/api/projects/:project_id/stories/:story_id?')
         }
       }
     }
-  })/*.post(async (req, res) => {
-    const releaseData = req.body.releaseData;
+  }).post(async (req, res) => {
+    const storyData = req.body.storyData;
     const projectID = req.body.projectID;
     const memberID = req.body.memberID;
+    const associatedFeatures = req.body.associatedFeatures || [];
+    const associatedSprints = req.body.associatedSprints || [];
 
-    const expectedEmptyFields = ['features', 'sprints'];
-    expectedEmptyFields.forEach(f => {
-      if (!releaseData[f]) {
-        releaseData[f] = [];
-      }
-    });
+    if (!storyData.tasks) {
+      storyData.tasks = [];
+    }
 
-    console.log('releaseRegisterHandler: Received', {
-      releaseData,
+    if (!storyData.status) {
+      storyData.status = 'todo';
+    }
+
+    console.log('POST stories: Received', {
+      storyData,
       projectID,
-      memberID
+      memberID,
+      associatedFeatures,
+      associatedSprints
     });
 
     const projectSearch = await getProjectsForMember(memberID, projectID);
@@ -353,24 +358,24 @@ app.route('/api/projects/:project_id/stories/:story_id?')
       res.status(404).send({
         error: 'Project not found for given member'
       });
-    } else if (!db.isValidRelease(releaseData, projectID)) {
-      const missingFields = db.getInvalidFieldsForRelease(releaseData, projectID);
+    } else if (!db.isValidStory(storyData, projectID)) {
+      const missingFields = db.getInvalidFieldsForStory(storyData, projectID);
       const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
       res.status(400).send({
         error: errorMessage
       });
     } else {
       const projectData = projectSearch[0];
-      const projectReleaseData = projectData.releases;
-      if (projectReleaseData[releaseData.id]) {
+      const projectStoriesData = projectData.stories;
+      if (projectStoriesData[storyData.id]) {
         return res.status(404).send({
-          error: 'Release ID already exists.'
+          error: 'Story ID already exists.'
         });
       }
-      await db.addRelease(projectID, releaseData);
+      await db.addStory(projectID, storyData, associatedFeatures, associatedSprints);
       res.sendStatus(200);
     }
-  });*/
+  });
 
 // eslint-disable-next-line no-unused-vars
 let server;
