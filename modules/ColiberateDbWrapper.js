@@ -291,9 +291,22 @@ class ColiberateDbWrapper {
     });
   }
 
+  async addTask() {
+
+  }
+
+  async deleteTask() {
+    
+  }
+
   async updateRelease(projectID, newRelease){
     await this.deleteRelease(projectID, newRelease.id);
     await this.addRelease(projectID, newRelease);
+  }
+
+  async updateTasks(projectID, newTask) {
+    await this.deleteTask(projectID, newTask.id);
+    await this.addTask(projectID, newTask.id);
   }
 
   async addFeature(projectID, newFeature) {
