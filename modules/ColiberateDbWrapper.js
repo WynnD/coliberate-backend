@@ -205,17 +205,17 @@ class ColiberateDbWrapper {
 
   // eslint-disable-next-line no-unused-vars
   getInvalidFieldsForStory(target, projectID) {
-    const expectedFields = ['id', 'status', 'name', 'description', 'businessValue', 'tasks'];
+    const expectedFields = ['id', 'name', 'tasks'];
     if (typeof target !== 'object') {
       return expectedFields;
     }
 
-    // TODO: provide better validation, especially with using projectID
     const invalidFields = expectedFields.filter(f => !target[f]);
     return invalidFields;
   }
 
-  // checks for valid fields
+  // checks for valid fieldss
+  // TODO: what even calls/uses this? *Deprecate*
   isValidStory(target, projectID) {
     return this.getInvalidFieldsForStory(target, projectID).length === 0;
   }
