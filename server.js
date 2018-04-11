@@ -286,6 +286,92 @@ app.route('/api/projects/:project_id/releases/:release_id?')
     }
   });
 
+app.route('/api/projects/:project_id/stories/:story_id?')
+  .get(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.project_id;
+    const storyID = req.params.story_id;
+
+    console.log({
+      memberID,
+      projectID,
+      storyID
+    });
+
+    if (memberID === undefined) {
+      res.status(403).send({
+        error: 'No member ID specified'
+      });
+    } else if (projectID === undefined) {
+      res.status(403).send({
+        error: 'No project ID specified'
+      });
+    } else {
+      const data = await getProjectsForMember(memberID, projectID);
+      if (data.length === 0) {
+        return res.status(404).send({
+          error: 'Project not found'
+        });
+      } else {
+        const stories = data[0].stories;
+        if (storyID !== undefined) {
+          if (stories[storyID]) {
+            return res.status(200).send(stories[storyID]);
+          } else {
+            return res.status(404).send({
+              error: 'Story not found'
+            });
+          }
+        } else {
+          return res.status(200).send(stories);
+        }
+      }
+    }
+  })/*.post(async (req, res) => {
+    const releaseData = req.body.releaseData;
+    const projectID = req.body.projectID;
+    const memberID = req.body.memberID;
+
+    const expectedEmptyFields = ['features', 'sprints'];
+    expectedEmptyFields.forEach(f => {
+      if (!releaseData[f]) {
+        releaseData[f] = [];
+      }
+    });
+
+    console.log('releaseRegisterHandler: Received', {
+      releaseData,
+      projectID,
+      memberID
+    });
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+    console.log({
+      projectSearch
+    });
+    if (projectSearch.length === 0) {
+      res.status(404).send({
+        error: 'Project not found for given member'
+      });
+    } else if (!db.isValidRelease(releaseData, projectID)) {
+      const missingFields = db.getInvalidFieldsForRelease(releaseData, projectID);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      res.status(400).send({
+        error: errorMessage
+      });
+    } else {
+      const projectData = projectSearch[0];
+      const projectReleaseData = projectData.releases;
+      if (projectReleaseData[releaseData.id]) {
+        return res.status(404).send({
+          error: 'Release ID already exists.'
+        });
+      }
+      await db.addRelease(projectID, releaseData);
+      res.sendStatus(200);
+    }
+  });*/
+
 // eslint-disable-next-line no-unused-vars
 let server;
 if (argv.ip !== '127.0.0.1') {
