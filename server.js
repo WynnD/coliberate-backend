@@ -461,6 +461,90 @@ app.route('/api/projects/:project_id/stories/:story_id?')
     }
   });
 
+
+app.route('/api/projects/:project_id/features/:feature_id?')
+  .get(async (req, res) => {
+    const memberId = req.query.member_id;
+    const projectId = req.params.project_id;
+    const featureId = req.params.feature_id;
+
+    let missing_args = [];
+    if (memberId === undefined) {
+      missing_args.push('memberId');
+    }
+    if (projectId === undefined) {
+      missing_args.push('projectId');
+    }
+
+    if (missing_args.length !== 0) {
+      const args = missing_args.join(', ');
+      const error_message = { error: `No ${args} specified` };
+      return res.status(403).send(error_message);
+    } else {
+      const data = await getProjectsForMember(memberId, projectId);
+      if (data.length === 0) {
+        return res.status(404).send({ error: 'Feature not found' });
+      } else if (data[0].features[featureId] === undefined) {
+        return res.status(403).send({ error: 'User not permitted' });
+      } else {
+        const features = data[0].features;
+        if (featureId !== undefined) {
+          const single_feature = features[featureId];
+          if (single_feature !== undefined) {
+            console.log('sending', { memberId, projectId, featureId });
+            return res.status(200).send(single_feature);
+          } else {
+            return res.status(404).send({ error: 'Feature not found' });
+          }
+        } else {
+          return res.sendStatus(200);
+        }
+      }
+    }
+  }).post(async (req, res) => {
+    const { featureData, associatedReleases, memberID } = req.body;
+    const projectID = req.params.project_id;
+
+    const expectedEmptyFields = ['stories', 'tasks'];
+    expectedEmptyFields.forEach(f => {
+      if (!featureData[f]) {
+        featureData[f] = [];
+      }
+    });
+
+    console.log('recieved', { featureData, associatedReleases, memberID, projectID });
+    const projects = await getProjectsForMember(memberID, projectID);
+    if (projects.length === 0) {
+      return res.status(404).send({ error: `Cannot find project with id '${projectID}' for user ${memberID}` });
+    } else if (!db.isValidFeature(featureData, projectID)) {
+      const missingFields = db.getInvalidFieldsForFeature(featureData, projectID);
+      return res.status(400).send({ error: `Cannot add feature, missing fields: ${missingFields}` });
+    } else {
+      const projectData = projects[0];
+      const projectFeatureData = projectData.features;
+      const projectReleaseData = projectData.releases;
+      if (projectFeatureData[featureData.id]) {
+        return res.status(400).send({ error: `Feature with ID ${featureData.id} already exists` });
+      } else if (!objectContainsKeys(projectReleaseData, associatedReleases)) {
+        const missingReleases = getMissingKeys(projectReleaseData, associatedReleases);
+        return res.status(400).send({ error: `Cannot add feature, associated releases do not exist: ${missingReleases}` });
+      } else {
+        await db.addFeature(projectID, featureData, associatedReleases);
+        return res.sendStatus(200);
+      }
+    }
+  });
+
+function objectContainsKeys(object, keyArray) {
+  const missingKeys = getMissingKeys(object, keyArray);
+  return missingKeys.length === 0;
+}
+
+function getMissingKeys(object, keyArray) {
+  return keyArray.filter((id) => object[id] === undefined);
+}
+
+
 // eslint-disable-next-line no-unused-vars
 let server;
 if (argv.ip !== '127.0.0.1') {
