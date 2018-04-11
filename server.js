@@ -322,7 +322,7 @@ app.route('/api/projects/:project_id/features/:feature_id?')
             return res.status(404).send({ error: 'Feature not found' });
           }
         } else {
-          return res.status(200).send(features);
+          return res.sendStatus(200);
         }
       }
     }
@@ -340,21 +340,22 @@ app.route('/api/projects/:project_id/features/:feature_id?')
     console.log('recieved', { featureData, associatedReleases, memberID, projectID });
     const projects = await getProjectsForMember(memberID, projectID);
     if (projects.length === 0) {
-      return res.statusCode(404).send({ error: `Cannot find project with id '${projectID}' for user ${memberID}`});
+      return res.status(404).send({ error: `Cannot find project with id '${projectID}' for user ${memberID}`});
     } else if (!db.isValidFeature(featureData, projectID)) {
       const missingFields = db.getInvalidFieldsForFeature(featureData, projectID);
-      return res.statusCode(400).send({ error: `Cannot add feature, missing fields: ${missingFields}` });
+      return res.status(400).send({ error: `Cannot add feature, missing fields: ${missingFields}` });
     } else {
       const projectData = projects[0];
       const projectFeatureData = projectData.features;
       const projectReleaseData = projectData.releases;
       if (projectFeatureData[featureData.id]) {
-        return res.statusCode(400).send( {error: `Feature with ID ${featureData.id} already exists` });
+        return res.status(400).send( {error: `Feature with ID ${featureData.id} already exists` });
       } else if (!objectContainsKeys(projectReleaseData, associatedReleases)) {
         const missingReleases = getMissingKeys(projectReleaseData, associatedReleases);
-        return res.statusCode(400).send({ error: `Cannot add feature, associated releases do not exist: ${missingReleases}` });
+        return res.status(400).send({ error: `Cannot add feature, associated releases do not exist: ${missingReleases}` });
       } else {
         await db.addFeature(projectID, featureData, associatedReleases);
+        return res.sendStatus(200);
       }
     }
   });
