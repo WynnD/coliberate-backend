@@ -161,6 +161,7 @@ class ColiberateDbWrapper {
   }
 
   async updateMember(member = {}){
+    console.error('Called potenially errouneous update.');
     await this.deleteMember({id: member.id});
     await this.addMember(member);
   }
@@ -203,10 +204,44 @@ class ColiberateDbWrapper {
     return await this.findInDB('projects', query, fieldsToExclude);
   }
 
-  async addStory(projectID, newStory) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
+  // eslint-disable-next-line no-unused-vars
+  getInvalidFieldsForStory(target, projectID) {
+    const expectedFields = ['id', 'name', 'tasks'];
+    if (typeof target !== 'object') {
+      return expectedFields;
+    }
+
+    const invalidFields = expectedFields.filter(f => !target[f]);
+    return invalidFields;
+  }
+
+  // checks for valid fieldss
+  // TODO: what even calls/uses this? *Deprecate*
+  isValidStory(target, projectID) {
+    return this.getInvalidFieldsForStory(target, projectID).length === 0;
+  }
+
+  async addStory(projectID, newStory, associatedFeatures = [], associatedSprints = []) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
       project.stories[newStory.id] = newStory;
       return { stories: project.stories };
+    });
+
+    // assumption: related fields checked previously with isValid function
+    const project = await this.findProject({ id: projectID });
+
+    associatedFeatures.forEach(async (id) => {
+      const feature = project[0].features[id];
+      feature.stories.push(newStory.id);
+      // console.log('updating entry for feature', id);
+      await this.updateFeature(projectID, feature);
+    });
+
+    associatedSprints.forEach(async (id) => {
+      const sprint = project[0].sprints[id];
+      sprint.stories.push(newStory.id);
+      // console.log('updating entry for sprint', id);
+      await this.updateSprint(projectID, sprint);
     });
   }
 
@@ -220,6 +255,7 @@ class ColiberateDbWrapper {
   }
 
   async updateStory(projectID, newStory) {
+    console.error('Called potenially errouneous update.');
     await this.deleteStory(projectID, newStory.id);
     await this.addStory(projectID, newStory);
   }
@@ -258,36 +294,163 @@ class ColiberateDbWrapper {
   }
 
   async updateRelease(projectID, newRelease){
+    console.error('Called potenially errouneous update.');
     await this.deleteRelease(projectID, newRelease.id);
     await this.addRelease(projectID, newRelease);
   }
 
-  async addFeature(projectID, newFeature) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
-      project.features[newFeature.id] = newFeature;
-      return { features: project.features };
+
+  getInvalidFieldsForTask(task) {
+    const expectedFields = ['id', 'name', 'takenBy', 'status'];
+    if (typeof task !== 'object') {
+      return expectedFields;
+    }
+
+    var invalidFields = expectedFields.filter(f => !task[f]);
+    /*if (task.hasOwnProperty('members')) {
+      if (getInvalidMemberForProject(task['member'].length !== 0))
+        invalidFields.push('members');
+    }*/
+    return invalidFields;
+  }
+
+  isValidTask(task, projectID) {
+    return this.getInvalidFieldsForTask(task, projectID).length === 0;
+  }
+
+  async addTask(projectID, newTask, associatedFeatures = [], associatedSprints = [], associatedStories = []) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      project.tasks[newTask.id] = newTask;
+      return { tasks: project.tasks };
+    });
+
+    // assumption: related fields checked previously with isValid function
+    const project = await this.findProject({ id: projectID });
+
+    associatedFeatures.forEach(async (id) => {
+      const feature = project[0].features[id];
+      feature.tasks.push(newTask.id);
+      // console.log('updating entry for feature', id);
+      await this.updateFeature(projectID, feature);
+    });
+
+    associatedSprints.forEach(async (id) => {
+      const sprint = project[0].sprints[id];
+      sprint.tasks.push(newTask.id);
+      // console.log('updating entry for sprint', id);
+      await this.updateSprint(projectID, sprint);
+    });
+
+    associatedStories.forEach(async (id) => {
+      const story = project[0].stories[id];
+      story.tasks.push(newTask.id);
+      // console.log('updating entry for sprint', id);
+      await this.updateStory(projectID, story);
     });
   }
 
-  async deleteFeature(projectID, releaseID) {
+  async deleteTask(projectID, taskID) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      delete project.task[taskID];
+      return { task: project.tasks };
+    });
+  }
+
+  async updateTask(projectID, newTask) {
+    await this.deleteTask(projectID, newTask.id);
+    await this.addTask(projectID, newTask.id);
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  getInvalidFieldsForFeature(featureData, projectID) {
+    const expectedFields = ['id','name','description','stories','tasks'];
+    if (typeof featureData !== 'object') {
+      return expectedFields;
+    }
+
+    const invalidFields = expectedFields.filter(f => !featureData[f]);
+    return invalidFields;
+  }
+
+  isValidFeature(featureData, projectID) {
+    return this.getInvalidFieldsForFeature(featureData, projectID).length === 0;
+  }
+
+  async addFeature(projectID, newFeature, associatedReleases) {
+    // updates project object to contain new feature
+    await this.updateInDB('projects', { id: projectID }, (project) => {
+      project.features[newFeature.id] = newFeature;
+      return { features: project.features };
+    });
+    // update associated release too
+    if (associatedReleases !== undefined) {
+      const project = await this.findProject({ id: projectID });
+      associatedReleases.forEach(async (releaseID) => {
+        const release = project[0].releases[releaseID];
+        release.features.push(newFeature.id);
+        await this.updateRelease(projectID, release);
+      });
+    }
+
+    return;
+  }
+
+  async deleteFeature(projectID, featureID) {
     // eslint-disable-next-line no-console
     console.log('TODO: update anything related to this feature');
     await this.updateInDB('projects', { id: projectID }, (project) => {
-      delete project.features[releaseID];
-      return { releases: project.releases };
+      delete project.features[featureID];
+      return { features: project.features };
+    });
+
+    const project = await this.findProject({ id: projectID });
+    const releases = project[0].releases;
+    Object.keys(releases).forEach( (key) => {
+      const featureIndex = releases[key].features.indexOf(featureID);
+      if (featureIndex !== -1) {
+        releases[key].features.splice(featureIndex, 1);
+      }
+    });
+
+    await this.updateInDB('projects', { id: projectID }, () => {
+      return { releases };
     });
   }
 
   async updateFeature(projectID, newFeature){
-    await this.deleteFeature(projectID, newFeature.id);
+    // await this.deleteFeature(projectID, newFeature.id);
     await this.addFeature(projectID, newFeature);
   }
 
-  async addSprint(projectID, newSprint) {
-    return await this.updateInDB('projects', { id: projectID }, (project) => {
+  // eslint-disable-next-line no-unused-vars
+  getInvalidFieldsForSprint(sprint, projectID, associatedRelease) {
+    const expectedFields = ['id', 'name', 'startDate', 'endDate', 'stories', 'tasks'];
+    if (typeof sprint !== 'object') {
+      return expectedFields;
+    }
+
+    // TODO: provide better validation, especially with using projectID
+    const invalidFields = expectedFields.filter(f => !sprint[f]);
+    return invalidFields;
+  }
+
+  // checks for valid fields
+  isValidSprint(sprint, projectID, associatedRelease) {
+    return this.getInvalidFieldsForSprint(sprint, projectID, associatedRelease).length === 0;
+  }
+
+  async addSprint(projectID, newSprint, associatedRelease) {
+    await this.updateInDB('projects', { id: projectID }, (project) => {
       project.sprints[newSprint.id] = newSprint;
       return { sprints: project.sprints };
     });
+    // assumption: existence of related fields checked previously with isValid function
+    const project = await this.findProject({ id: projectID });
+    // console.log({ project }, project.releases)
+    const release = project[0].releases[associatedRelease];
+    release.sprints.push(newSprint.id);
+    // console.log({ release });
+    return await this.updateRelease(projectID, release);
   }
 
   async deleteSprint(projectID, sprintID) {
@@ -300,6 +463,7 @@ class ColiberateDbWrapper {
   }
 
   async updateSprint(projectID, newSprint){
+    console.error('Called potenially errouneous update.');
     await this.deleteSprint(projectID, newSprint.id);
     await this.addSprint(projectID, newSprint);
   }

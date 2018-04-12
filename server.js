@@ -52,6 +52,14 @@ app.get('/data', (req, res) => {
 async function memberRegisterHandler(req, res) {
   const accountData = req.body.accountData;
 
+  if (!accountData.description) {
+    accountData.description = 'No description available';
+  }
+
+  if (!accountData.skills) {
+    accountData.skills = [];
+  }
+
   console.log('memberRegisterHandler: Received', { accountData });
 
   if (!db.isValidMember(accountData)) {
@@ -286,6 +294,359 @@ app.route('/api/projects/:project_id/releases/:release_id?')
     }
   });
 
+app.route('/api/projects/:project_id/sprints/:sprint_id?')
+  .get(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.project_id;
+    const sprintID = req.params.sprint_id;
+
+    console.log({
+      memberID,
+      projectID,
+      sprintID
+    });
+
+    if (memberID === undefined) {
+      res.status(403).send({
+        error: 'No member ID specified'
+      });
+    } else if (projectID === undefined) {
+      res.status(403).send({
+        error: 'No project ID specified'
+      });
+    } else {
+      const data = await getProjectsForMember(memberID, projectID);
+      if (data.length === 0) {
+        return res.status(404).send({
+          error: 'Project not found'
+        });
+      } else {
+        const sprints = data[0].sprints;
+        if (sprintID !== undefined) {
+          if (sprints[sprintID]) {
+            return res.status(200).send(sprints[sprintID]);
+          } else {
+            return res.status(404).send({
+              error: 'Sprint not found'
+            });
+          }
+        } else {
+          return res.status(200).send(sprints);
+        }
+      }
+    }
+  }).post(async (req, res) => {
+    const sprintData = req.body.sprintData;
+    const projectID = req.body.projectID;
+    const memberID = req.body.memberID;
+    const associatedRelease = req.body.associatedRelease;
+
+    const expectedEmptyFields = ['stories', 'tasks'];
+    expectedEmptyFields.forEach(f => {
+      if (!sprintData[f]) {
+        sprintData[f] = [];
+      }
+    });
+
+    console.log('releaseRegisterHandler: Received', {
+      sprintData,
+      projectID,
+      memberID,
+      associatedRelease
+    });
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+    console.log({ projectSearch });
+    if (projectSearch.length === 0) {
+      res.status(404).send({
+        error: 'Project not found for given member'
+      });
+    } else if (!db.isValidSprint(sprintData, projectID, associatedRelease)) {
+      const missingFields = db.getInvalidFieldsForSprint(sprintData, projectID, associatedRelease);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      res.status(400).send({ error: errorMessage });
+    } else {
+      const projectData = projectSearch[0];
+      const projectSprintData = projectData.sprints;
+      if (projectSprintData[sprintData.id]) {
+        return res.status(404).send({
+          error: 'Sprint ID already exists.'
+        });
+      }
+      await db.addSprint(projectID, sprintData, associatedRelease);
+      res.sendStatus(200);
+    }
+  });
+
+app.route('/api/projects/:project_id/stories/:story_id?')
+  .get(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.project_id;
+    const storyID = req.params.story_id;
+
+    console.log({
+      memberID,
+      projectID,
+      storyID
+    });
+
+    if (memberID === undefined) {
+      res.status(403).send({
+        error: 'No member ID specified'
+      });
+    } else if (projectID === undefined) {
+      res.status(403).send({
+        error: 'No project ID specified'
+      });
+    } else {
+      const data = await getProjectsForMember(memberID, projectID);
+      if (data.length === 0) {
+        return res.status(404).send({
+          error: 'Project not found'
+        });
+      } else {
+        const stories = data[0].stories;
+        if (storyID !== undefined) {
+          if (stories[storyID]) {
+            return res.status(200).send(stories[storyID]);
+          } else {
+            return res.status(404).send({
+              error: 'Story not found'
+            });
+          }
+        } else {
+          return res.status(200).send(stories);
+        }
+      }
+    }
+  }).post(async (req, res) => {
+    const storyData = req.body.storyData;
+    const projectID = req.body.projectID;
+    const memberID = req.body.memberID;
+    const associatedFeatures = req.body.associatedFeatures || [];
+    const associatedSprints = req.body.associatedSprints || [];
+
+    if (!storyData.tasks) {
+      storyData.tasks = [];
+    }
+
+    if (!storyData.status) {
+      storyData.status = 'todo';
+    }
+
+    console.log('POST stories: Received', {
+      storyData,
+      projectID,
+      memberID,
+      associatedFeatures,
+      associatedSprints
+    });
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+    console.log({
+      projectSearch
+    });
+    if (projectSearch.length === 0) {
+      res.status(404).send({
+        error: 'Project not found for given member'
+      });
+    } else if (!db.isValidStory(storyData, projectID)) {
+      const missingFields = db.getInvalidFieldsForStory(storyData, projectID);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      res.status(400).send({
+        error: errorMessage
+      });
+    } else {
+      const projectData = projectSearch[0];
+      const projectStoriesData = projectData.stories;
+      if (projectStoriesData[storyData.id]) {
+        return res.status(404).send({
+          error: 'Story ID already exists.'
+        });
+      }
+      await db.addStory(projectID, storyData, associatedFeatures, associatedSprints);
+      res.sendStatus(200);
+    }
+  });
+
+
+app.route('/api/projects/:project_id/features/:feature_id?')
+  .get(async (req, res) => {
+    const memberId = req.query.member_id;
+    const projectId = req.params.project_id;
+    const featureId = req.params.feature_id;
+
+    let missing_args = [];
+    if (memberId === undefined) {
+      missing_args.push('memberId');
+    }
+    if (projectId === undefined) {
+      missing_args.push('projectId');
+    }
+
+    if (missing_args.length !== 0) {
+      const args = missing_args.join(', ');
+      const error_message = { error: `No ${args} specified` };
+      return res.status(403).send(error_message);
+    } else {
+      const data = await getProjectsForMember(memberId, projectId);
+      if (data.length === 0) {
+        return res.status(404).send({ error: 'Feature not found' });
+      } else if (data[0].features[featureId] === undefined) {
+        return res.status(403).send({ error: 'User not permitted' });
+      } else {
+        const features = data[0].features;
+        if (featureId !== undefined) {
+          const single_feature = features[featureId];
+          if (single_feature !== undefined) {
+            console.log('sending', { memberId, projectId, featureId });
+            return res.status(200).send(single_feature);
+          } else {
+            return res.status(404).send({ error: 'Feature not found' });
+          }
+        } else {
+          return res.sendStatus(200);
+        }
+      }
+    }
+  }).post(async (req, res) => {
+    const { featureData, associatedReleases, memberID } = req.body;
+    const projectID = req.params.project_id;
+
+    const expectedEmptyFields = ['stories', 'tasks'];
+    expectedEmptyFields.forEach(f => {
+      if (!featureData[f]) {
+        featureData[f] = [];
+      }
+    });
+
+    console.log('recieved', { featureData, associatedReleases, memberID, projectID });
+    const projects = await getProjectsForMember(memberID, projectID);
+    if (projects.length === 0) {
+      return res.status(404).send({ error: `Cannot find project with id '${projectID}' for user ${memberID}`});
+    } else if (!db.isValidFeature(featureData, projectID)) {
+      const missingFields = db.getInvalidFieldsForFeature(featureData, projectID);
+      return res.status(400).send({ error: `Cannot add feature, missing fields: ${missingFields}` });
+    } else {
+      const projectData = projects[0];
+      const projectFeatureData = projectData.features;
+      const projectReleaseData = projectData.releases;
+      if (projectFeatureData[featureData.id]) {
+        return res.status(400).send({ error: `Feature with ID ${featureData.id} already exists` });
+      } else if (associatedReleases && !objectContainsKeys(projectReleaseData, associatedReleases)) {
+        const missingReleases = getMissingKeys(projectReleaseData, associatedReleases);
+        return res.status(400).send({ error: `Cannot add feature, associated releases do not exist: ${missingReleases}` });
+      } else {
+        await db.addFeature(projectID, featureData, associatedReleases);
+        return res.sendStatus(200);
+      }
+    }
+  });
+
+function objectContainsKeys(object, keyArray = []) {
+  const missingKeys = getMissingKeys(object, keyArray);
+  return missingKeys.length === 0;
+}
+
+function getMissingKeys(object, keyArray = []) {
+  return keyArray.filter((id) => object[id] === undefined);
+}
+
+
+
+app.route('/api/projects/:project_id/tasks/:task_id?')
+  .get(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.project_id;
+    const taskID = req.params.task_id;
+
+    console.log({
+      memberID,
+      projectID,
+      taskID
+    });
+
+    if (memberID === undefined) {
+      res.status(403).send({
+        error: 'No member ID specified'
+      });
+    } else if (projectID === undefined) {
+      res.status(403).send({
+        error: 'No project ID specified'
+      });
+    } else {
+      const data = await getProjectsForMember(memberID, projectID);
+      if (data.length === 0) {
+        return res.status(404).send({
+          error: 'Project not found'
+        });
+      } else {
+        const tasks = data[0].tasks;
+        if (taskID !== undefined) {
+          if (tasks[taskID]) {
+            return res.status(200).send(tasks[taskID]);
+          } else {
+            return res.status(404).send({
+              error: 'Story not found'
+            });
+          }
+        } else {
+          return res.status(200).send(tasks);
+        }
+      }
+    }
+  }).post(async (req, res) => {
+    const taskData = req.body.taskData;
+    const projectID = req.body.projectID;
+    const memberID = req.body.memberID;
+    const associatedFeatures = req.body.associatedFeatures || [];
+    const associatedSprints = req.body.associatedSprints || [];
+    const associatedStories = req.body.associatedStories || [];
+
+    if (!taskData.status) {
+      taskData.status = 'todo';
+    }
+
+    if (!taskData.takenBy) {
+      taskData.takenBy = [];
+    }
+
+    console.log('POST stories: Received', {
+      taskData,
+      projectID,
+      memberID,
+      associatedFeatures,
+      associatedSprints,
+      associatedStories
+    });
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+    console.log({
+      projectSearch
+    });
+    if (projectSearch.length === 0) {
+      res.status(404).send({
+        error: 'Project not found for given member'
+      });
+    } else if (!db.isValidTask(taskData, projectID)) {
+      const missingFields = db.getInvalidFieldsForTask(taskData, projectID);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      res.status(400).send({
+        error: errorMessage
+      });
+    } else {
+      const projectData = projectSearch[0];
+      const projectTaskData = projectData.tasks;
+      if (projectTaskData[taskData.id]) {
+        return res.status(404).send({
+          error: 'Task ID already exists.'
+        });
+      }
+      await db.addTask(projectID, taskData, associatedFeatures, associatedSprints, associatedStories);
+      res.sendStatus(200);
+    }
+  });
+
 // eslint-disable-next-line no-unused-vars
 let server;
 if (argv.ip !== '127.0.0.1') {
@@ -425,8 +786,8 @@ async function initializeDbDev() {
           id: 'release1',
           name: 'Release 1',
           description: 'description of release',
-          startDate: 'date-string',
-          endDate: 'date-string',
+          startDate: new Date(currentDate.valueOf() - oneWeek).toDateString(), // e.g. Mon Mar 12 2018
+          endDate: new Date(new Date().valueOf() + 3 * oneWeek).toDateString(),
           // format of start/end date doesn't matter as long as new Date() can parse it
           // startDate < endDate
           features: ['feature1-12314'], // array of feature IDs
@@ -438,8 +799,8 @@ async function initializeDbDev() {
           // goals are defined by associated tasks and stories
           id: 'sprint1-41245',
           name: 'Sprint 1',
-          startDate: 'date-string', // can't be earlier than associated release
-          endDate: 'date-string',  // can't be later than associated release
+          startDate: new Date(currentDate.valueOf() - oneWeek).toDateString(), // e.g. Mon Mar 12 2018
+          endDate: new Date(new Date().valueOf() + oneWeek).toDateString(),
           stories: ['homepage'], // array of story IDs
           tasks: [] // array of tasks
         }
