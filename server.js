@@ -57,7 +57,7 @@ async function memberRegisterHandler(req, res) {
   }
 
   if (!accountData.skills) {
-    accountData.skills = {};
+    accountData.skills = [];
   }
 
   console.log('memberRegisterHandler: Received', { accountData });
