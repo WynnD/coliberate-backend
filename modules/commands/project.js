@@ -4,6 +4,7 @@ const StoryCommand = require('./story');
 const FeatureCommand = require('./feature');
 const ReleaseCommand = require('./release');
 const SprintCommand = require('./sprint');
+const TaskCommand = require('./task');
 
 class ProjectCommand extends MongoCommand {
   constructor(connector = new MongoConnector()) {
@@ -12,6 +13,7 @@ class ProjectCommand extends MongoCommand {
     this.features = new FeatureCommand(this);
     this.releases = new ReleaseCommand(this);
     this.sprints = new SprintCommand(this);
+    this.tasks = new TaskCommand(this);
   }
 
   getInvalidFieldsFor(project) {

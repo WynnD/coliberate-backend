@@ -48,7 +48,8 @@ class StoryCommand extends MongoCommand {
         const sprint = project[0].sprints[id];
         sprint.stories.push(story.id);
         // console.log('updating entry for sprint', id);
-        await this.updateSprint(projectId, sprint);
+        // await this.updateSprint(projectId, sprint);
+        await this._projectCommand.sprints.update(projectId, sprint);
       });
     }
   }

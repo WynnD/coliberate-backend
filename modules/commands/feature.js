@@ -41,7 +41,8 @@ class FeatureCommand extends MongoCommand {
       associatedReleases.forEach(async (id) => {
         const release = project[0].releases[id];
         release.features.push(feature.id);
-        await this.updateRelease(projectId, release);
+        // await this.updateRelease(projectId, release);
+        await this._projectCommand.releases.update(projectId, release);
       });
     }
   }

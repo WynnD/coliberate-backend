@@ -40,7 +40,8 @@ class SprintCommand extends MongoCommand {
       const project = await this.findProject({ id: projectId });
       const release = project[0].releases[associatedReleaseId];
       release.sprints.push(sprint.id);
-      return await this.updateRelease(projectId, release);
+      // return await this.updateRelease(projectId, release);
+      await this._projectCommand.releases.update(projectId, release);
     }
   }
 
