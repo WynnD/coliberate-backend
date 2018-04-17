@@ -7,7 +7,6 @@ class MongoCollectionManager {
 
   insertOneIntoDB(entity) {
     return new Promise((fulfill, reject) => {
-      // this.getDatabaseInstance()
       this._connector.databaseInstance
         .then(db => {
           db.collection(this._collectionName).insertOne(entity, (err/*, res*/) => {
@@ -23,7 +22,6 @@ class MongoCollectionManager {
 
   findInDB(query = {}, fieldsToExclude = {}) {
     return new Promise((fulfill, reject) => {
-      // this.getDatabaseInstance()
       this._connector.databaseInstance
         .then(db => {
           db.collection(this._collectionName)
@@ -44,7 +42,6 @@ class MongoCollectionManager {
       if (!query) {
         reject(Error('No query defined for dropMember'));
       }
-      // this.getDatabaseInstance()
       this._connector.databaseInstance
         .then(db => {
           db.collection(this._collectionName)
@@ -61,7 +58,6 @@ class MongoCollectionManager {
 
   dropCollectionInDB() {
     return new Promise((fulfill, reject) => {
-      // this.getDatabaseInstance()
       this._connector.databaseInstance
         .then(db => {
           db.collection(this._collectionName)
@@ -78,13 +74,13 @@ class MongoCollectionManager {
 
   updateInDB(query = {}, updateFn = () => {}) {
     return new Promise(async (fulfill, reject) => {
-      const results = await this.findInDB(this._collectionName, query, {});
+      const results = await this.findInDB(query, {});
       if (!results[0]) {
         reject(Error('No data found'));
       }
 
       const setQuery = updateFn(results[0]);
-      this.getDatabaseInstance()
+      this._connector.databaseInstance
         .then(db => {
           db.collection(this._collectionName)
             .updateOne(query, { $set: setQuery }, (err, res) => {

@@ -1,9 +1,11 @@
 const MongoCommand = require('../MongoCommand');
 const MongoConnector = require('../MongoConnector');
+const StoryCommand = require('./story');
 
 class ProjectCommand extends MongoCommand {
   constructor(connector = new MongoConnector()) {
     super(connector, 'projects');
+    this.stories = new StoryCommand(this);
   }
 
   getInvalidFieldsFor(project) {
@@ -18,7 +20,11 @@ class ProjectCommand extends MongoCommand {
   }
 
   async update(project) {
-    await this.add(project);
+    return await this.add(project);
+  }
+
+  async updateInternalField(query = {}, updateFn = () => {}) {
+    return await super.update(query, updateFn);
   }
 }
 

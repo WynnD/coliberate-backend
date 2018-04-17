@@ -34,8 +34,8 @@ class MongoCommand {
     return await this._manager.findInDB(query, fieldsToExclude);
   }
 
-  async update(entity = {}, updateFn = () => {}) {
-    return await this._manager.updateInDB(entity, updateFn);
+  async update(query = {}, updateFn = () => {}) {
+    return await this._manager.updateInDB(query, updateFn);
   }
 
   async drop() {
