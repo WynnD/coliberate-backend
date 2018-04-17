@@ -1,7 +1,7 @@
 const mongo = require('mongodb');
 
 class MongoConnector {
-  constructor(url, dbName = 'coliberate') {
+  constructor(url = '', dbName = 'coliberate') {
     this._MongoClient = mongo.MongoClient;
     this._url = url;
     this._dbName = dbName;

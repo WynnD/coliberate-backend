@@ -8,7 +8,8 @@ class MongoCommand {
 
   // eslint-disable-next-line no-unused-vars
   getInvalidFieldsFor(entity = {}) {
-    return [];
+    throw Error('Must define getInvalidFieldsFor in child class');
+    // return [];
   }
 
   isValid(entity = {}) {

@@ -1,6 +1,6 @@
 const MongoCommand = require('../MongoCommand');
 const MongoConnector = require('../MongoConnector');
-class MemberCommand extends MongoCommand{
+class MemberCommand extends MongoCommand {
   constructor (connector = new MongoConnector()) {
     super(connector, 'members');
   }
