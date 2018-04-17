@@ -1,11 +1,13 @@
 const MongoCommand = require('../MongoCommand');
 const MongoConnector = require('../MongoConnector');
 const StoryCommand = require('./story');
+const FeatureCommand = require('./feature');
 
 class ProjectCommand extends MongoCommand {
   constructor(connector = new MongoConnector()) {
     super(connector, 'projects');
     this.stories = new StoryCommand(this);
+    this.features = new FeatureCommand(this);
   }
 
   getInvalidFieldsFor(project) {
