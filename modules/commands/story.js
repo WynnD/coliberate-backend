@@ -18,6 +18,10 @@ class StoryCommand extends MongoCommand {
     return invalidFields;
   }
 
+  isInvalid(story, projectId) {
+    return this.getInvalidFieldsFor(story, projectId).length === 0;
+  }
+
   async add(projectId, story = {}, associatedFeatures = [], associatedSprints = []) {
     if (!this.isValid(story)) {
       const missingFields = this.getInvalidFieldsFor(story);

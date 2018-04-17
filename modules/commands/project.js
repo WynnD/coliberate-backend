@@ -3,6 +3,7 @@ const MongoConnector = require('../MongoConnector');
 const StoryCommand = require('./story');
 const FeatureCommand = require('./feature');
 const ReleaseCommand = require('./release');
+const SprintCommand = require('./sprint');
 
 class ProjectCommand extends MongoCommand {
   constructor(connector = new MongoConnector()) {
@@ -10,6 +11,7 @@ class ProjectCommand extends MongoCommand {
     this.stories = new StoryCommand(this);
     this.features = new FeatureCommand(this);
     this.releases = new ReleaseCommand(this);
+    this.sprints = new SprintCommand(this);
   }
 
   getInvalidFieldsFor(project) {

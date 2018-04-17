@@ -19,6 +19,10 @@ class ReleaseCommand extends MongoCommand {
     return invalidFields;
   }
 
+  isValid(release, projectId) {
+    return this.getInvalidFieldsFor(release, projectId).length === 0;
+  }
+
   async add(projectId, release = {}) {
     if (!this.isValid(release)) {
       const missingFields = this.getInvalidFieldsFor(release);

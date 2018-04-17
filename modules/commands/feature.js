@@ -18,8 +18,12 @@ class FeatureCommand extends MongoCommand {
     return invalidFields;
   }
 
+  isValid(featureData, projectId) {
+    return this.getInvalidFieldsFor(featureData, projectId).length === 0;
+  }
+
   async add(projectId, feature = {}, associatedReleases = []) {
-    if (!this.isValid(feature)) {
+    if (!this.isValid(feature, projectId)) {
       const missingFields = this.getInvalidFieldsFor(feature);
       const errorMessage = `Invalid Fields: ${missingFields.join(', ')}`;
       throw Error(errorMessage);
