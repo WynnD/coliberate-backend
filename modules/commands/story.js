@@ -18,7 +18,7 @@ class StoryCommand extends MongoCommand {
     return invalidFields;
   }
 
-  isInvalid(story, projectId) {
+  isValid(story, projectId) {
     return this.getInvalidFieldsFor(story, projectId).length === 0;
   }
 

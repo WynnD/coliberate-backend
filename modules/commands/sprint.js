@@ -37,7 +37,8 @@ class SprintCommand extends MongoCommand {
 
     if (associatedReleaseId) {
       // assumption: existence of related fields checked previously with isValid function
-      const project = await this.findProject({ id: projectId });
+      // const project = await this.findProject({ id: projectId });
+      const project = await this._projectCommand.find({ id: projectId });
       const release = project[0].releases[associatedReleaseId];
       release.sprints.push(sprint.id);
       // return await this.updateRelease(projectId, release);
