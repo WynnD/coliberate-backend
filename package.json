@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "jest",
+    "test-module": "jest commands/coliberate-module.test.js",
     "server": "node server.js -f \"../coliberate-frontend/dist/\"",
     "dev": "node server.js -d -f \"../coliberate-frontend/dist/\""
   },
