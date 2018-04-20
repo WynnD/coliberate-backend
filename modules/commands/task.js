@@ -74,6 +74,34 @@ class TaskCommand extends MongoCommand {
   async delete(projectId, taskId) {
     // eslint-disable-next-line no-console
     console.log('TODO: update anything related to this task');
+
+    const project = this._projectCommand.find({ id: projectId });
+
+    const {stories, features, sprints} = project;
+    for (const story of stories) {
+      const id = story.tasks.indexOf(taskId);
+      if (id > 0) {
+        story.tasks.splice(id, 1);
+      }
+      await this._projectCommand.stories.update(projectId, story);
+    }
+
+    for (const feature of features) {
+      const id = feature.tasks.indexOf(taskId);
+      if (id > 0) {
+        feature.tasks.splice(id, 1);
+      }
+      await this._projectCommand.features.update(projectId, feature);
+    }
+
+    for (const sprint of sprints) {
+      const id = sprint.tasks.indexOf(taskId);
+      if (id > 0) {
+        sprint.tasks.splice(id, 1);
+      }
+      await this._projectCommand.sprints.update(projectId, sprint);
+    }
+    
     return await this._projectCommand.updateInternalField({ id: projectId }, (project) => {
       delete project.tasks[taskId];
       return { tasks: project.tasks };
