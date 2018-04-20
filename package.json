@@ -4,8 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "jest",
-    "test-module": "jest commands/coliberate-module.test.js",
+    "test": "jest modules --runInBand",
     "server": "node server.js -f \"../coliberate-frontend/dist/\"",
     "dev": "node server.js -d -f \"../coliberate-frontend/dist/\""
   },
