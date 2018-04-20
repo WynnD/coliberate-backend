@@ -2,7 +2,6 @@ const express = require('express'),
   app = express(),
   bodyParser = require('body-parser');
 
-
 /* eslint-disable indent,no-console */
 const argv = require('yargs')
   .usage('Usage: $0 -p [integer] -i [string of IP address] -f [directory to build or dist folder] -d')
@@ -22,9 +21,11 @@ const argv = require('yargs')
   .argv;
 /* eslint-enable indent */
 
-const dbWrapper = require('./modules/ColiberateDbWrapper');
+// const dbWrapper = require('./modules/ColiberateDbWrapper');
 const url = 'mongodb://localhost:27017';
-const db = new dbWrapper(url, argv.dev ? 'coliberate-dev' : 'coliberate');
+// const db = new dbWrapper(url, argv.dev ? 'coliberate-dev' : 'coliberate');
+const ColiberateModule = require('./modules/commands/coliberate-module');
+const coliberate = new ColiberateModule(url, argv.dev ? 'coliberate-dev' : 'coliberate');
 
 // files in public folder can be accessed via URL
 app.use(express.static(argv['build-folder']));
@@ -45,10 +46,6 @@ app.get(/^(?!\/api).*$/, (req, res) => {
   res.sendFile('./index.html', { root: argv['build-folder'] });
 });
 
-app.get('/data', (req, res) => {
-  res.send({ error: 'Data as a JSON object should be returned here' });
-});
-
 async function memberRegisterHandler(req, res) {
   const accountData = req.body.accountData;
 
@@ -62,14 +59,18 @@ async function memberRegisterHandler(req, res) {
 
   console.log('memberRegisterHandler: Received', { accountData });
 
-  if (!db.isValidMember(accountData)) {
-    const missingFields = db.getInvalidFieldsForMember(accountData);
+  if (!coliberate.members.isValid(accountData)) {
+  // if (!db.isValidMember(accountData)) {
+    // const missingFields = db.getInvalidFieldsForMember(accountData);
+    const missingFields = coliberate.members.getInvalidFieldsFor(accountData);
     const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
     res.status(400).send({ error: errorMessage });
   } else {
     // check if member ID and/or login exists
-    const idSearch = await db.findMember({ id: accountData.id });
-    const usernameSearch = await db.findMember({ username: accountData.username });
+    // const idSearch = await db.findMember({ id: accountData.id });
+    // const usernameSearch = await db.findMember({ username: accountData.username });
+    const idSearch = await coliberate.members.find({ id: accountData.id });
+    const usernameSearch = await coliberate.members.find({ username: accountData.username });
 
     if (usernameSearch.length > 0) {
       console.log({ usernameSearch });
@@ -79,8 +80,10 @@ async function memberRegisterHandler(req, res) {
       console.log({ idSearch });
       res.status(400).send({ error: 'ID already exists. Refresh and try again.' });
     } else {
-      await db.addMember(accountData);
-      const data = await db.findMember({ id: accountData.id });
+      // await db.addMember(accountData);
+      // const data = await db.findMember({ id: accountData.id });
+      await coliberate.members.add(accountData);
+      const data = await coliberate.members.find({ id: accountData.id });
       if (data.length === 1) {
         delete data[0].password;
         res.status(200).send({
@@ -88,7 +91,7 @@ async function memberRegisterHandler(req, res) {
           data: data[0]
         });
       } else {
-        res.status(500).send({ error: 'Array length > 0' });
+        res.status(500).send({ error: 'Member Array length > 0' });
       }
     }
   }
@@ -102,7 +105,8 @@ async function getProjectsForMember(memberID, projectID) {
     query.id = projectID;
   }
   // console.log(query);
-  const data = await db.findProject(query);
+  // const data = await db.findProject(query);
+  const data = await coliberate.projects.find(query);
   return data;
 }
 
@@ -120,7 +124,8 @@ app.post('/api/login', async (req, res) => {
   }
 
   const query = { username, password };
-  const member = await db.findMember(query);
+  // const member = await db.findMember(query);
+  const member = await coliberate.members.find(query);
 
   console.log('/api/login: member login', member);
 
@@ -157,7 +162,8 @@ app.route('/api/members/:id?')
       query.id = memberID;
     }
 
-    let data = await db.findMember(query);
+    // let data = await db.findMember(query);
+    let data = await coliberate.members.find(query);
 
     res.status(200).send({
       status: 200,
@@ -207,8 +213,10 @@ app.route('/api/projects/:id?')
 
     console.log('projectRegisterHandler: Received', { projectData, memberId }, projectData.members);
 
-    if (!db.isValidProject(projectData)) {
-      const missingFields = db.getInvalidFieldsForProject(projectData);
+    // if (!db.isValidProject(projectData)) {
+    if (!coliberate.projects.isValid(projectData)) {
+      // const missingFields = db.getInvalidFieldsForProject(projectData);
+      const missingFields = coliberate.projects.getInvalidFieldsFor(projectData);
       const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
       return res.status(400).send({ error: errorMessage });
     }
@@ -219,14 +227,16 @@ app.route('/api/projects/:id?')
       description: 'Project Created' // probably generated server side based on what's changed
     });
     
-    const idSearch = await db.findProject({ id: projectData.id });
+    // const idSearch = await db.findProject({ id: projectData.id });
+    const idSearch = await coliberate.projects.find({ id: projectData.id });
 
     if (idSearch.length > 0) {
       // TODO: Add better handling for ID clashing
       console.log({ idSearch });
       res.status(400).send({ error: 'ID already exists. Try again under a different name.' });
     } else {
-      await db.addProject(projectData);
+      // await db.addProject(projectData);
+      await coliberate.projects.add(projectData);
       // const projects = await db.findProject({ id: projectData.id });
       return res.sendStatus(200);
     }
@@ -279,8 +289,10 @@ app.route('/api/projects/:project_id/releases/:release_id?')
     console.log({ projectSearch });
     if (projectSearch.length === 0) {
       res.status(404).send({ error: 'Project not found for given member' });
-    } else if (!db.isValidRelease(releaseData, projectID)) {
-      const missingFields = db.getInvalidFieldsForRelease(releaseData, projectID);
+    // } else if (!db.isValidRelease(releaseData, projectID)) {
+    } else if (!coliberate.projects.releases.isValid(releaseData, projectID)) {
+      // const missingFields = db.getInvalidFieldsForRelease(releaseData, projectID);
+      const missingFields = coliberate.projects.releases.getInvalidFieldsFor(releaseData, projectID);
       const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
       res.status(400).send({ error: errorMessage });
     } else {
@@ -289,7 +301,8 @@ app.route('/api/projects/:project_id/releases/:release_id?')
       if (projectReleaseData[releaseData.id]) {
         return res.status(404).send({ error: 'Release ID already exists.' });
       }
-      await db.addRelease(projectID, releaseData);
+      // await db.addRelease(projectID, releaseData);
+      await coliberate.projects.releases.add(projectID, releaseData);
       res.sendStatus(200);
     }
   });
@@ -361,8 +374,10 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
       res.status(404).send({
         error: 'Project not found for given member'
       });
-    } else if (!db.isValidSprint(sprintData, projectID, associatedRelease)) {
-      const missingFields = db.getInvalidFieldsForSprint(sprintData, projectID, associatedRelease);
+    // } else if (!db.isValidSprint(sprintData, projectID, associatedRelease)) {
+    } else if (!coliberate.projects.sprints.isValid(sprintData, projectID, associatedRelease)) {
+      // const missingFields = db.getInvalidFieldsForSprint(sprintData, projectID, associatedRelease);
+      const missingFields = coliberate.projects.sprints.getInvalidFieldsFor(sprintData, projectID, associatedRelease);
       const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
       res.status(400).send({ error: errorMessage });
     } else {
@@ -373,7 +388,8 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
           error: 'Sprint ID already exists.'
         });
       }
-      await db.addSprint(projectID, sprintData, associatedRelease);
+      // await db.addSprint(projectID, sprintData, associatedRelease);
+      await coliberate.projects.sprints.add(projectID, sprintData, associatedRelease);
       res.sendStatus(200);
     }
   });
@@ -450,8 +466,10 @@ app.route('/api/projects/:project_id/stories/:story_id?')
       res.status(404).send({
         error: 'Project not found for given member'
       });
-    } else if (!db.isValidStory(storyData, projectID)) {
-      const missingFields = db.getInvalidFieldsForStory(storyData, projectID);
+    // } else if (!db.isValidStory(storyData, projectID)) {
+    } else if (!coliberate.projects.stories.isValid(storyData, projectID)) {
+      // const missingFields = db.getInvalidFieldsForStory(storyData, projectID);
+      const missingFields = coliberate.projects.stories.getInvalidFieldsFor(storyData, projectID);
       const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
       res.status(400).send({
         error: errorMessage
@@ -464,7 +482,8 @@ app.route('/api/projects/:project_id/stories/:story_id?')
           error: 'Story ID already exists.'
         });
       }
-      await db.addStory(projectID, storyData, associatedFeatures, associatedSprints);
+      // await db.addStory(projectID, storyData, associatedFeatures, associatedSprints);
+      await coliberate.projects.stories.add(projectID, storyData, associatedFeatures, associatedSprints);
       res.sendStatus(200);
     }
   });
@@ -524,8 +543,10 @@ app.route('/api/projects/:project_id/features/:feature_id?')
     const projects = await getProjectsForMember(memberID, projectID);
     if (projects.length === 0) {
       return res.status(404).send({ error: `Cannot find project with id '${projectID}' for user ${memberID}`});
-    } else if (!db.isValidFeature(featureData, projectID)) {
-      const missingFields = db.getInvalidFieldsForFeature(featureData, projectID);
+    // } else if (!db.isValidFeature(featureData, projectID)) {
+    } else if (!coliberate.projects.features.isValid(featureData, projectID)) {
+      // const missingFields = db.getInvalidFieldsForFeature(featureData, projectID);
+      const missingFields = coliberate.projects.features.getInvalidFieldsFor(featureData, projectID);
       return res.status(400).send({ error: `Cannot add feature, missing fields: ${missingFields}` });
     } else {
       const projectData = projects[0];
@@ -537,7 +558,8 @@ app.route('/api/projects/:project_id/features/:feature_id?')
         const missingReleases = getMissingKeys(projectReleaseData, associatedReleases);
         return res.status(400).send({ error: `Cannot add feature, associated releases do not exist: ${missingReleases}` });
       } else {
-        await db.addFeature(projectID, featureData, associatedReleases);
+        // await db.addFeature(projectID, featureData, associatedReleases);
+        await coliberate.projects.features.add(projectID, featureData, associatedReleases);
         return res.sendStatus(200);
       }
     }
@@ -628,8 +650,10 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
       res.status(404).send({
         error: 'Project not found for given member'
       });
-    } else if (!db.isValidTask(taskData, projectID)) {
-      const missingFields = db.getInvalidFieldsForTask(taskData, projectID);
+    // } else if (!db.isValidTask(taskData, projectID)) {
+    } else if (!coliberate.projects.tasks.isValid(taskData, projectID)) {
+      // const missingFields = db.getInvalidFieldsForTask(taskData, projectID);
+      const missingFields = coliberate.projects.tasks.getInvalidFieldsFor(taskData, projectID);
       const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
       res.status(400).send({
         error: errorMessage
@@ -642,7 +666,8 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
           error: 'Task ID already exists.'
         });
       }
-      await db.addTask(projectID, taskData, associatedFeatures, associatedSprints, associatedStories);
+      // await db.addTask(projectID, taskData, associatedFeatures, associatedSprints, associatedStories);
+      await coliberate.projects.tasks.add(projectID, taskData, associatedFeatures, associatedSprints, associatedStories);
       res.sendStatus(200);
     }
   });
@@ -1032,16 +1057,20 @@ async function initializeDbDev() {
   // ensure that tables are empty
   /* eslint-disable no-empty */
   try {
-    await db.dropCollectionInDB('members');
+    // await db.dropCollectionInDB('members');
+    await coliberate.members.drop();
   } catch (err) { }
 
   try {
-    await db.dropCollectionInDB('projects');
+    // await db.dropCollectionInDB('projects');
+    await coliberate.projects.drop();
   } catch (err) { }
   /* eslint-enable no-empty */
 
-  const memberPopulationPromises = Object.values(sampleMembers).map(m => db.addMember(m));
-  const projectPopulationPromises = Object.values(sampleProjects).map(p => db.addProject(p));
+  // const memberPopulationPromises = Object.values(sampleMembers).map(m => db.addMember(m));
+  // const projectPopulationPromises = Object.values(sampleProjects).map(p => db.addProject(p));
+  const memberPopulationPromises = Object.values(sampleMembers).map(m => coliberate.members.add(m));
+  const projectPopulationPromises = Object.values(sampleProjects).map(p => coliberate.projects.add(p));
 
   await Promise.all([...memberPopulationPromises, ...projectPopulationPromises]);
 
