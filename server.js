@@ -240,6 +240,30 @@ app.route('/api/projects/:id?')
       // const projects = await db.findProject({ id: projectData.id });
       return res.sendStatus(200);
     }
+  }).delete(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.id;
+
+    if (memberID === undefined) {
+      res.status(403).send({ error: 'No member ID specified' });
+    } else {
+      const data = await getProjectsForMember(memberID, projectID);
+      if (projectID) {
+        if (data[0]) {
+          // delete project
+          try {
+            await coliberate.projects.delete(projectID);
+            res.sendStatus(200);
+          } catch (e) {
+            res.status(404).send({ error: 'Project not found' });
+          }
+        } else {
+          res.status(404).send({ error: 'Project not found' });
+        }
+      } else {
+        res.status(400).send({ error: 'Project to delete not specified' });
+      }
+    }
   });
 
 app.route('/api/projects/:project_id/releases/:release_id?')
