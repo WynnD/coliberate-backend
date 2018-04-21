@@ -670,6 +670,16 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
       await coliberate.projects.tasks.add(projectID, taskData, associatedFeatures, associatedSprints, associatedStories);
       res.sendStatus(200);
     }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const taskID = req.params.task_id;
+
+    try {
+      await coliberate.projects.tasks.delete(projectID, taskID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({error: 'Cannot delete task'});
+    }
   });
 
 // eslint-disable-next-line no-unused-vars
