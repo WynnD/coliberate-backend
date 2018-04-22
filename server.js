@@ -643,9 +643,7 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
     });
 
     const projectSearch = await getProjectsForMember(memberID, projectID);
-    console.log({
-      projectSearch
-    });
+
     if (projectSearch.length === 0) {
       res.status(404).send({
         error: 'Project not found for given member'
@@ -673,12 +671,19 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
   }).delete(async (req, res) => {
     const projectID = req.params.project_id;
     const taskID = req.params.task_id;
+    const memberID = req.query.member_id;
 
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+    
     try {
       await coliberate.projects.tasks.delete(projectID, taskID);
       res.sendStatus(200);
     } catch (e) {
-      res.statusCode(400).send({error: 'Cannot delete task'});
+      res.statusCode(400).send({error: 'Cannot delete task from project' });
     }
   });
 
