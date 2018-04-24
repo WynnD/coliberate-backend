@@ -36,6 +36,8 @@ app.use(bodyParser.urlencoded({ extended: true})); // support URL-encoded bodies
 if (argv.dev) {
   app.use(function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
+    // FIXME: Do we need this line when not using dev mode?
+    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
   });
