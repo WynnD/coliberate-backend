@@ -72,13 +72,13 @@ class TaskCommand extends MongoCommand {
   }
 
   async delete(projectId, taskId) {
-    // eslint-disable-next-line no-console
-    console.log('TODO: update anything related to this task');
+    const projects = await this._projectCommand.find({ id: projectId });
+    const project = projects[0];
+    const stories = project.stories;
+    const features = project.features;
+    const sprints = project.sprints;
 
-    const project = this._projectCommand.find({ id: projectId });
-
-    const {stories, features, sprints} = project;
-    for (const story of stories) {
+    for (const story of Object.values(stories)) {
       const id = story.tasks.indexOf(taskId);
       if (id > 0) {
         story.tasks.splice(id, 1);
@@ -86,7 +86,7 @@ class TaskCommand extends MongoCommand {
       await this._projectCommand.stories.update(projectId, story);
     }
 
-    for (const feature of features) {
+    for (const feature of Object.values(features)) {
       const id = feature.tasks.indexOf(taskId);
       if (id > 0) {
         feature.tasks.splice(id, 1);
@@ -94,7 +94,7 @@ class TaskCommand extends MongoCommand {
       await this._projectCommand.features.update(projectId, feature);
     }
 
-    for (const sprint of sprints) {
+    for (const sprint of Object.values(sprints)) {
       const id = sprint.tasks.indexOf(taskId);
       if (id > 0) {
         sprint.tasks.splice(id, 1);
