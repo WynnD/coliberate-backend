@@ -31,8 +31,8 @@ class ProjectCommand extends MongoCommand {
     return await this.add(project);
   }
 
-  async delete(projectID) {
-    return await super.delete('projects', {id: projectID});
+  async delete(query) {
+    return await super.delete(query);
   }
 
   async updateInternalField(query = {}, updateFn = () => {}) {
