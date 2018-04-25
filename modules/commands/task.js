@@ -45,7 +45,6 @@ class TaskCommand extends MongoCommand {
         const feature = project[0].features[id];
         feature.tasks.push(task.id);
         // console.log('updating entry for feature', id);
-        // await this.updateFeature(projectId, feature);
         await this._projectCommand.features.update(projectId, feature);
       });
   
@@ -53,7 +52,6 @@ class TaskCommand extends MongoCommand {
         const sprint = project[0].sprints[id];
         sprint.tasks.push(task.id);
         // console.log('updating entry for sprint', id);
-        // await this.updateSprint(projectId, sprint);
         await this._projectCommand.sprints.update(projectId, sprint);
       });
     
@@ -61,7 +59,6 @@ class TaskCommand extends MongoCommand {
         const story = project[0].stories[id];
         story.tasks.push(task.id);
         // console.log('updating entry for sprint', id);
-        // await this.updateStory(projectId, story);
         await this._projectCommand.stories.update(projectId, story);
       });
     }
