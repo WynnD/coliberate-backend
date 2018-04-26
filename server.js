@@ -635,7 +635,7 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
       taskData.takenBy = [];
     }
 
-    console.log('POST stories: Received', {
+    console.log('POST tasks: Received', {
       taskData,
       projectID,
       memberID,
@@ -686,6 +686,49 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
       res.sendStatus(200);
     } catch (e) {
       res.statusCode(400).send({error: 'Cannot delete task from project' });
+    }
+  }).put(async (req, res) => {
+    const projectID = req.params.project_id;
+    const taskString = req.query.task;
+    const memberID = req.query.member_id;
+
+    console.log(taskString);
+
+    let taskData;
+    try {
+      taskData = JSON.parse(taskString);
+    } catch (err) {
+      console.log('error parsing task data', err);
+      res.statusCode(400).send({ error: 'Error parsing task data' });
+    }
+    console.log('PUT tasks: Received', {
+      taskData,
+      projectID,
+      memberID,
+    });
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({
+        error: 'Project not found for given member'
+      });
+    } else if (!coliberate.projects.tasks.isValid(taskData, projectID)) {
+      const missingFields = coliberate.projects.tasks.getInvalidFieldsFor(taskData, projectID);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      return res.status(400).send({
+        error: errorMessage
+      });
+    }
+
+    try {
+      await coliberate.projects.tasks.update(projectID, taskData);
+      res.sendStatus(200);
+    } catch (e) {
+      console.log('error editing task', e);
+      res.statusCode(400).send({
+        error: 'Cannot edit task from project'
+      });
     }
   });
 
