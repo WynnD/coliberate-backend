@@ -37,20 +37,20 @@ class StoryCommand extends MongoCommand {
     if (associatedFeatures.length > 0 || associatedSprints.length > 0) {
       // assumption: related fields checked previously with isValid function
       const project = await this._projectCommand.find({ id: projectId });
-      associatedFeatures.forEach(async (id) => {
+      for (const id of associatedFeatures) {
         const feature = project[0].features[id];
         feature.stories.push(story.id);
         // console.log('updating entry for feature', id);
         await this._projectCommand.features.update(projectId, feature);
-      });
+      }
   
-      associatedSprints.forEach(async (id) => {
+      for (const id of associatedSprints) {
         const sprint = project[0].sprints[id];
         sprint.stories.push(story.id);
         // console.log('updating entry for sprint', id);
         // await this.updateSprint(projectId, sprint);
         await this._projectCommand.sprints.update(projectId, sprint);
-      });
+      }
     }
   }
 

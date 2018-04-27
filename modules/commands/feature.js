@@ -38,12 +38,12 @@ class FeatureCommand extends MongoCommand {
       // assumption: related fields checked previously with isValid function
       const project = await this._projectCommand.find({ id: projectId });
   
-      associatedReleases.forEach(async (id) => {
+      for (const id of associatedReleases) {
         const release = project[0].releases[id];
         release.features.push(feature.id);
         // await this.updateRelease(projectId, release);
         await this._projectCommand.releases.update(projectId, release);
-      });
+      }
     }
   }
 

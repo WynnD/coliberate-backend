@@ -25,7 +25,7 @@ async function emptyDatabase() {
 }
 
 afterAll(async () => {
-  emptyDatabase();
+  await emptyDatabase();
   await cw.closeConnection();
 });
 
