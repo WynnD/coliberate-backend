@@ -40,27 +40,27 @@ class TaskCommand extends MongoCommand {
     if (associatedFeatures.length > 0 || associatedSprints.length > 0 || associatedStories.length > 0) {
       // assumption: related fields checked previously with isValid function
       const project = await this._projectCommand.find({ id: projectId });
-  
-      associatedFeatures.forEach(async (id) => {
+
+      for (const id of associatedFeatures) {
         const feature = project[0].features[id];
         feature.tasks.push(task.id);
         // console.log('updating entry for feature', id);
         await this._projectCommand.features.update(projectId, feature);
-      });
-  
-      associatedSprints.forEach(async (id) => {
+      }
+
+      for (const id of associatedSprints) {
         const sprint = project[0].sprints[id];
         sprint.tasks.push(task.id);
         // console.log('updating entry for sprint', id);
         await this._projectCommand.sprints.update(projectId, sprint);
-      });
-    
-      associatedStories.forEach(async (id) => {
+      }
+      
+      for (const id of associatedStories) {
         const story = project[0].stories[id];
         story.tasks.push(task.id);
         // console.log('updating entry for sprint', id);
         await this._projectCommand.stories.update(projectId, story);
-      });
+      }
     }
   }
 
