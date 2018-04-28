@@ -276,7 +276,7 @@ test('adding and removing a project in the database', async () => {
   });
 
   // const deleteResult = await db.deleteProject({ id: project.id });
-  const deleteResult = await cw.projects.delete({ id: project.id });
+  const deleteResult = await cw.projects.delete(project.id);
   expect(deleteResult).toBeTruthy();
   expect(deleteResult.result).toBeDefined();
   expect(deleteResult.result.n).toEqual(1);
