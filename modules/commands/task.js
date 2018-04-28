@@ -76,26 +76,17 @@ class TaskCommand extends MongoCommand {
     const sprints = project.sprints;
 
     for (const story of Object.values(stories)) {
-      const id = story.tasks.indexOf(taskId);
-      if (id > 0) {
-        story.tasks.splice(id, 1);
-      }
+      story.tasks = story.tasks.filter((elem) => elem !== taskId);
       await this._projectCommand.stories.update(projectId, story);
     }
 
     for (const feature of Object.values(features)) {
-      const id = feature.tasks.indexOf(taskId);
-      if (id > 0) {
-        feature.tasks.splice(id, 1);
-      }
+      feature.tasks = feature.tasks.filter((elem) => elem !== taskId);
       await this._projectCommand.features.update(projectId, feature);
     }
 
     for (const sprint of Object.values(sprints)) {
-      const id = sprint.tasks.indexOf(taskId);
-      if (id > 0) {
-        sprint.tasks.splice(id, 1);
-      }
+      sprint.tasks = sprint.tasks.filter((elem) => elem !== taskId);
       await this._projectCommand.sprints.update(projectId, sprint);
     }
     

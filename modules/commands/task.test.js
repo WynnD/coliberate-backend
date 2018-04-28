@@ -12,6 +12,11 @@ const ColiberateWrapper = require('./coliberate-module');
 const url = 'mongodb://localhost:27017';
 const cw = new ColiberateWrapper(url, 'coliberate');
 
+function hasTaskAssociation(obj, taskId) {
+  const index = obj.tasks.indexOf(taskId);
+  return index >= 0;
+}
+
 async function emptyDatabase() {
   /* eslint-disable no-empty */
   try {
@@ -78,4 +83,35 @@ test('add task to project with sprint association', async () => {
   const associatedTasks = sprint.tasks;
   const task = associatedTasks.filter((task) => task === sampleTask.id);
   expect(task.length).toBe(1);
+});
+
+test('remove task from project with all associations', async () => {
+  expect.assertions(1
+    + Object.values(sampleProject.sprints).length
+    + Object.values(sampleProject.stories).length
+    + Object.values(sampleProject.features).length);
+
+  await cw.projects.tasks.delete(sampleProject.id, sampleTask.id);
+
+  const projects = await cw.projects.find({ id: sampleProject.id });
+  const project = projects[0];
+
+  const tasks = Object.values(project.tasks);
+  const containsTask = !tasks.indexOf(sampleTask.id) == -1;
+  expect(containsTask).toBeFalsy();
+
+  for (const sprint of Object.values(project.sprints)) {
+    const hasAssociation = hasTaskAssociation(sprint, sampleTask.id);
+    expect(hasAssociation).toBeFalsy();
+  }
+
+  for (const feature of Object.values(project.features)) {
+    const hasAssociation = hasTaskAssociation(feature, sampleTask.id);
+    expect(hasAssociation).toBeFalsy();
+  }
+
+  for (const story of Object.values(project.stories)) {
+    const hasAssociation = hasTaskAssociation(story, sampleTask.id);
+    expect(hasAssociation).toBeFalsy();
+  }
 });
