@@ -532,6 +532,23 @@ app.route('/api/projects/:project_id/stories/:story_id?')
       await coliberate.projects.stories.add(projectID, storyData, associatedFeatures, associatedSprints);
       res.sendStatus(200);
     }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const storyID = req.params.story_id;
+    const memberID = req.query.member_id;
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+
+    try {
+      await coliberate.projects.stories.delete(projectID, storyID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({ error: 'Cannot delete story from project' });
+    }
   });
 
 
@@ -624,7 +641,7 @@ app.route('/api/projects/:project_id/features/:feature_id?')
       await coliberate.projects.features.delete(projectID, featureID);
       res.sendStatus(200);
     } catch (e) {
-      res.statusCode(400).send({ error: 'Cannot delete task from project' });
+      res.statusCode(400).send({ error: 'Cannot delete story from project' });
     }
   });
 
