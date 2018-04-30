@@ -40,30 +40,27 @@ class TaskCommand extends MongoCommand {
     if (associatedFeatures.length > 0 || associatedSprints.length > 0 || associatedStories.length > 0) {
       // assumption: related fields checked previously with isValid function
       const project = await this._projectCommand.find({ id: projectId });
-  
-      associatedFeatures.forEach(async (id) => {
+
+      for (const id of associatedFeatures) {
         const feature = project[0].features[id];
         feature.tasks.push(task.id);
         // console.log('updating entry for feature', id);
-        // await this.updateFeature(projectId, feature);
         await this._projectCommand.features.update(projectId, feature);
-      });
-  
-      associatedSprints.forEach(async (id) => {
+      }
+
+      for (const id of associatedSprints) {
         const sprint = project[0].sprints[id];
         sprint.tasks.push(task.id);
         // console.log('updating entry for sprint', id);
-        // await this.updateSprint(projectId, sprint);
         await this._projectCommand.sprints.update(projectId, sprint);
-      });
-    
-      associatedStories.forEach(async (id) => {
+      }
+      
+      for (const id of associatedStories) {
         const story = project[0].stories[id];
         story.tasks.push(task.id);
         // console.log('updating entry for sprint', id);
-        // await this.updateStory(projectId, story);
         await this._projectCommand.stories.update(projectId, story);
-      });
+      }
     }
   }
 
@@ -72,8 +69,27 @@ class TaskCommand extends MongoCommand {
   }
 
   async delete(projectId, taskId) {
-    // eslint-disable-next-line no-console
-    console.log('TODO: update anything related to this task');
+    const projects = await this._projectCommand.find({ id: projectId });
+    const project = projects[0];
+    const stories = project.stories;
+    const features = project.features;
+    const sprints = project.sprints;
+
+    for (const story of Object.values(stories)) {
+      story.tasks = story.tasks.filter((elem) => elem !== taskId);
+      await this._projectCommand.stories.update(projectId, story);
+    }
+
+    for (const feature of Object.values(features)) {
+      feature.tasks = feature.tasks.filter((elem) => elem !== taskId);
+      await this._projectCommand.features.update(projectId, feature);
+    }
+
+    for (const sprint of Object.values(sprints)) {
+      sprint.tasks = sprint.tasks.filter((elem) => elem !== taskId);
+      await this._projectCommand.sprints.update(projectId, sprint);
+    }
+    
     return await this._projectCommand.updateInternalField({ id: projectId }, (project) => {
       delete project.tasks[taskId];
       return { tasks: project.tasks };

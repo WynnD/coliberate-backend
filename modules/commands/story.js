@@ -37,20 +37,17 @@ class StoryCommand extends MongoCommand {
     if (associatedFeatures.length > 0 || associatedSprints.length > 0) {
       // assumption: related fields checked previously with isValid function
       const project = await this._projectCommand.find({ id: projectId });
-      associatedFeatures.forEach(async (id) => {
+      for (const id of associatedFeatures) {
         const feature = project[0].features[id];
         feature.stories.push(story.id);
-        // console.log('updating entry for feature', id);
         await this._projectCommand.features.update(projectId, feature);
-      });
+      }
   
-      associatedSprints.forEach(async (id) => {
+      for (const id of associatedSprints) {
         const sprint = project[0].sprints[id];
         sprint.stories.push(story.id);
-        // console.log('updating entry for sprint', id);
-        // await this.updateSprint(projectId, sprint);
         await this._projectCommand.sprints.update(projectId, sprint);
-      });
+      }
     }
   }
 
@@ -59,8 +56,21 @@ class StoryCommand extends MongoCommand {
   }
 
   async delete(projectId, storyId) {
-    // eslint-disable-next-line no-console
-    console.log('TODO: update anything related to this story');
+    const projects = await this._projectCommand.find({ id: projectId });
+    const project = projects[0];
+    const features = project.features;
+    const sprints = project.sprints;
+
+    for (const feature of Object.values(features)) {
+      feature.stories = feature.stories.filter((elem) => elem !== storyId);
+      await this._projectCommand.features.update(projectId, feature);
+    }
+
+    for (const sprint of Object.values(sprints)) {
+      sprint.stories = sprint.stories.filter((elem) => elem !== storyId);
+      await this._projectCommand.sprints.update(projectId, sprint);
+    }
+  
     return await this._projectCommand.updateInternalField({ id: projectId }, (project) => {
       delete project.stories[storyId];
       return { stories: project.stories };

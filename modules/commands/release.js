@@ -41,8 +41,6 @@ class ReleaseCommand extends MongoCommand {
   }
 
   async delete(projectId, releaseId) {
-    // eslint-disable-next-line no-console
-    console.log('TODO: update anything related to this release');
     return await this._projectCommand.updateInternalField({ id: projectId }, (project) => {
       delete project.releases[releaseId];
       return { releases: project.releases };

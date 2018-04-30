@@ -36,6 +36,8 @@ app.use(bodyParser.urlencoded({ extended: true})); // support URL-encoded bodies
 if (argv.dev) {
   app.use(function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
+    // FIXME: Do we need this line when not using dev mode?
+    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
   });
@@ -108,6 +110,11 @@ async function getProjectsForMember(memberID, projectID) {
   // const data = await db.findProject(query);
   const data = await coliberate.projects.find(query);
   return data;
+}
+
+async function memberHasAccessToProject(memberID, projectID) {
+  const memberProjects = await getProjectsForMember(memberID, projectID);
+  return (memberProjects.length !== 0);
 }
 
 app.post('/api/register', memberRegisterHandler);
@@ -240,6 +247,29 @@ app.route('/api/projects/:id?')
       // const projects = await db.findProject({ id: projectData.id });
       return res.sendStatus(200);
     }
+  }).delete(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.id;
+
+    if (memberID === undefined) {
+      return res.status(403).send({ error: 'No member ID specified' });
+    }
+
+    if (!projectID) {
+      res.status(403).send({ error: 'Project to delete not specified' });
+    }
+
+    const hasAccess = await memberHasAccessToProject(memberID, projectID);
+    if (!hasAccess) {
+      res.status(404).send({ error: 'Project not found' });
+    }
+
+    try {
+      await coliberate.projects.delete(projectID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.status(400).send({ error: 'Project could not be deleted' });
+    }
   });
 
 app.route('/api/projects/:project_id/releases/:release_id?')
@@ -286,7 +316,6 @@ app.route('/api/projects/:project_id/releases/:release_id?')
     console.log('releaseRegisterHandler: Received', { releaseData, projectID, memberID });
 
     const projectSearch = await getProjectsForMember(memberID, projectID);
-    console.log({ projectSearch });
     if (projectSearch.length === 0) {
       res.status(404).send({ error: 'Project not found for given member' });
     // } else if (!db.isValidRelease(releaseData, projectID)) {
@@ -304,6 +333,23 @@ app.route('/api/projects/:project_id/releases/:release_id?')
       // await db.addRelease(projectID, releaseData);
       await coliberate.projects.releases.add(projectID, releaseData);
       res.sendStatus(200);
+    }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const releaseID = req.params.release_id;
+    const memberID = req.query.member_id;
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+    
+    try {
+      await coliberate.projects.releases.delete(projectID, releaseID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({error: 'Cannot delete release from project' });
     }
   });
 
@@ -391,6 +437,23 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
       // await db.addSprint(projectID, sprintData, associatedRelease);
       await coliberate.projects.sprints.add(projectID, sprintData, associatedRelease);
       res.sendStatus(200);
+    }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const sprintID = req.params.sprint_id;
+    const memberID = req.query.member_id;
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+
+    try {
+      await coliberate.projects.sprints.delete(projectID, sprintID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({ error: 'Cannot delete sprint from project' });
     }
   });
 
@@ -486,6 +549,23 @@ app.route('/api/projects/:project_id/stories/:story_id?')
       await coliberate.projects.stories.add(projectID, storyData, associatedFeatures, associatedSprints);
       res.sendStatus(200);
     }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const storyID = req.params.story_id;
+    const memberID = req.query.member_id;
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+
+    try {
+      await coliberate.projects.stories.delete(projectID, storyID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({ error: 'Cannot delete story from project' });
+    }
   });
 
 
@@ -563,6 +643,23 @@ app.route('/api/projects/:project_id/features/:feature_id?')
         return res.sendStatus(200);
       }
     }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const featureID = req.params.feature_id;
+    const memberID = req.query.member_id;
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+
+    try {
+      await coliberate.projects.features.delete(projectID, featureID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({ error: 'Cannot delete story from project' });
+    }
   });
 
 function objectContainsKeys(object, keyArray = []) {
@@ -633,7 +730,7 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
       taskData.takenBy = [];
     }
 
-    console.log('POST stories: Received', {
+    console.log('POST tasks: Received', {
       taskData,
       projectID,
       memberID,
@@ -643,9 +740,7 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
     });
 
     const projectSearch = await getProjectsForMember(memberID, projectID);
-    console.log({
-      projectSearch
-    });
+
     if (projectSearch.length === 0) {
       res.status(404).send({
         error: 'Project not found for given member'
@@ -669,6 +764,66 @@ app.route('/api/projects/:project_id/tasks/:task_id?')
       // await db.addTask(projectID, taskData, associatedFeatures, associatedSprints, associatedStories);
       await coliberate.projects.tasks.add(projectID, taskData, associatedFeatures, associatedSprints, associatedStories);
       res.sendStatus(200);
+    }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const taskID = req.params.task_id;
+    const memberID = req.query.member_id;
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+    
+    try {
+      await coliberate.projects.tasks.delete(projectID, taskID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({error: 'Cannot delete task from project' });
+    }
+  }).put(async (req, res) => {
+    const projectID = req.params.project_id;
+    const taskString = req.query.task;
+    const memberID = req.query.member_id;
+
+    console.log(taskString);
+
+    let taskData;
+    try {
+      taskData = JSON.parse(taskString);
+    } catch (err) {
+      console.log('error parsing task data', err);
+      res.statusCode(400).send({ error: 'Error parsing task data' });
+    }
+    console.log('PUT tasks: Received', {
+      taskData,
+      projectID,
+      memberID,
+    });
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({
+        error: 'Project not found for given member'
+      });
+    } else if (!coliberate.projects.tasks.isValid(taskData, projectID)) {
+      const missingFields = coliberate.projects.tasks.getInvalidFieldsFor(taskData, projectID);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      return res.status(400).send({
+        error: errorMessage
+      });
+    }
+
+    try {
+      await coliberate.projects.tasks.update(projectID, taskData);
+      res.sendStatus(200);
+    } catch (e) {
+      console.log('error editing task', e);
+      res.statusCode(400).send({
+        error: 'Cannot edit task from project'
+      });
     }
   });
 

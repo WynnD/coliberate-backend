@@ -38,12 +38,12 @@ class FeatureCommand extends MongoCommand {
       // assumption: related fields checked previously with isValid function
       const project = await this._projectCommand.find({ id: projectId });
   
-      associatedReleases.forEach(async (id) => {
+      for (const id of associatedReleases) {
         const release = project[0].releases[id];
         release.features.push(feature.id);
-        // await this.updateRelease(projectId, release);
+
         await this._projectCommand.releases.update(projectId, release);
-      });
+      }
     }
   }
 
@@ -62,10 +62,7 @@ class FeatureCommand extends MongoCommand {
     const project = await this._projectCommand.find({ id: projectId });
     const releases = project[0].releases;
     Object.keys(releases).forEach((key) => {
-      const featureIndex = releases[key].features.indexOf(featureId);
-      if (featureIndex !== -1) {
-        releases[key].features.splice(featureIndex, 1);
-      }
+      releases[key].features = releases[key].features.filter(e => e !== featureId);
     });
 
     return await this._projectCommand.updateInternalField({ id: projectId }, () => {
