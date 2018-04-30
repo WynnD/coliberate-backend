@@ -188,4 +188,18 @@ const sampleProject = {
   defaultSprintLength: 14
 };
 
-module.exports = {sampleProject, sampleTask};
+const sampleRelease = {
+  id: 'release-456456',
+  name: 'Release Test',
+  description: 'It keeps getting better and better with more testing',
+  startDate: new Date(currentDate.valueOf() + 10 * oneWeek).toDateString(), // e.g. Mon Mar 12 2018
+  endDate: new Date(new Date().valueOf() + 14 * oneWeek).toDateString(),
+  features: [], // array of feature IDs
+  sprints: [] // array of sprint IDs
+};
+
+module.exports = {
+  sampleProject,
+  sampleRelease,
+  sampleTask
+};
