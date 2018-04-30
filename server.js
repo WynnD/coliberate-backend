@@ -36,6 +36,7 @@ app.use(bodyParser.urlencoded({ extended: true})); // support URL-encoded bodies
 if (argv.dev) {
   app.use(function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
   });
@@ -107,17 +108,6 @@ async function getProjectsForMember(memberID, projectID) {
   // console.log(query);
   // const data = await db.findProject(query);
   const data = await coliberate.projects.find(query);
-  return data;
-}
-
-async function getReleasesForSprint(sprintID, projectID) {
-  const query = {};
-  query[`sprints.${sprintID}`] = { $exists: true };
-  if (projectID) {
-    query.id = projectID;
-  }
-
-  const data = await coliberate.projects.releases.find(query);
   return data;
 }
 
@@ -404,43 +394,21 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
       res.sendStatus(200);
     }
   }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
     const sprintID = req.params.sprint_id;
-    const sprintData = req.body.sprintData;
-    const projectID = req.body.projectID;
-    const associatedRelease = req.body.associatedRelease;
+    const memberID = req.query.member_id;
 
-    const expectedEmptyFields = ['stories', 'tasks'];
-    expectedEmptyFields.forEach(f => {
-      if (!sprintData[f]) {
-        sprintData[f] = [];
-      }
-    });
-    
-    const projectSearch = await getReleasesForSprint(sprintID, projectID);
-    console.log({ projectSearch });
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
     if (projectSearch.length === 0) {
-      res.status(404).send({
-        error: 'Releases not found for given sprint'
-      });
-    // } else if (!db.isValidSprint(sprintData, projectID, associatedRelease)) {
-    } else if (!coliberate.projects.sprints.isValid(sprintData, projectID, associatedRelease)) {
-      // const missingFields = db.getInvalidFieldsForSprint(sprintData, projectID, associatedRelease);
-      const missingFields = coliberate.projects.sprints.getInvalidFieldsFor(sprintData, projectID, associatedRelease);
-      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
-      res.status(400).send({ error: errorMessage });
-    } else {
-      const projectData = projectSearch[0];
-      const projectSprintData = projectData.sprints;
-      if (projectSprintData[sprintData.id]) {
-        
-      }
-      else {
-        return res.status(404).send({
-        error: 'Sprint ID already exists.'
-      });
-      // await db.addSprint(projectID, sprintData, associatedRelease);
-      await coliberate.projects.sprints.add(projectID, sprintData, associatedRelease);
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+
+    try {
+      await coliberate.projects.sprints.delete(projectID, sprintID);
       res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({ error: 'Cannot delete sprint from project' });
     }
   });
 
