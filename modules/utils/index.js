@@ -11,6 +11,13 @@ const sampleTask = {
   takenBy: []
 };
 
+const sampleFeature = {
+  id: 'feature-4',
+  name: 'Sprint Team Management',
+  description: 'Our project will feature the management of sprint teams',
+  stories: [], // array of associated story IDs
+  tasks: [] // array of associated task IDs (not associated with stories)
+};
 const sampleProject = {
   id: 'sampleproject-0',
   name: 'Sample Project',
@@ -221,5 +228,6 @@ module.exports = {
   sampleRelease,
   sampleTask,
   sampleStory,
-  sampleSprint
+  sampleSprint,
+  sampleFeature
 };
