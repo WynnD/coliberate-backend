@@ -609,6 +609,23 @@ app.route('/api/projects/:project_id/features/:feature_id?')
         return res.sendStatus(200);
       }
     }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const featureID = req.params.feature_id;
+    const memberID = req.query.member_id;
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+
+    try {
+      await coliberate.projects.features.delete(projectID, featureID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({ error: 'Cannot delete task from project' });
+    }
   });
 
 function objectContainsKeys(object, keyArray = []) {
