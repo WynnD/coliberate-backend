@@ -36,6 +36,7 @@ app.use(bodyParser.urlencoded({ extended: true})); // support URL-encoded bodies
 if (argv.dev) {
   app.use(function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     next();
   });
@@ -562,6 +563,23 @@ app.route('/api/projects/:project_id/features/:feature_id?')
         await coliberate.projects.features.add(projectID, featureData, associatedReleases);
         return res.sendStatus(200);
       }
+    }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const featureID = req.params.feature_id;
+    const memberID = req.query.member_id;
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+
+    try {
+      await coliberate.projects.features.delete(projectID, featureID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({ error: 'Cannot delete task from project' });
     }
   });
 

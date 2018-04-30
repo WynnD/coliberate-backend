@@ -62,10 +62,7 @@ class FeatureCommand extends MongoCommand {
     const project = await this._projectCommand.find({ id: projectId });
     const releases = project[0].releases;
     Object.keys(releases).forEach((key) => {
-      const featureIndex = releases[key].features.indexOf(featureId);
-      if (featureIndex !== -1) {
-        releases[key].features.splice(featureIndex, 1);
-      }
+      releases[key].features = releases[key].features.filter(e => e !== featureId);
     });
 
     return await this._projectCommand.updateInternalField({ id: projectId }, () => {
