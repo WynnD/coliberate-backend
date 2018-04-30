@@ -110,6 +110,17 @@ async function getProjectsForMember(memberID, projectID) {
   return data;
 }
 
+async function getReleasesForSprint(sprintID, projectID) {
+  const query = {};
+  query[`sprints.${sprintID}`] = { $exists: true };
+  if (projectID) {
+    query.id = projectID;
+  }
+
+  const data = await coliberate.projects.releases.find(query);
+  return data;
+}
+
 app.post('/api/register', memberRegisterHandler);
 
 app.post('/api/login', async (req, res) => {
@@ -388,6 +399,45 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
           error: 'Sprint ID already exists.'
         });
       }
+      // await db.addSprint(projectID, sprintData, associatedRelease);
+      await coliberate.projects.sprints.add(projectID, sprintData, associatedRelease);
+      res.sendStatus(200);
+    }
+  }).delete(async (req, res) => {
+    const sprintID = req.params.sprint_id;
+    const sprintData = req.body.sprintData;
+    const projectID = req.body.projectID;
+    const associatedRelease = req.body.associatedRelease;
+
+    const expectedEmptyFields = ['stories', 'tasks'];
+    expectedEmptyFields.forEach(f => {
+      if (!sprintData[f]) {
+        sprintData[f] = [];
+      }
+    });
+    
+    const projectSearch = await getReleasesForSprint(sprintID, projectID);
+    console.log({ projectSearch });
+    if (projectSearch.length === 0) {
+      res.status(404).send({
+        error: 'Releases not found for given sprint'
+      });
+    // } else if (!db.isValidSprint(sprintData, projectID, associatedRelease)) {
+    } else if (!coliberate.projects.sprints.isValid(sprintData, projectID, associatedRelease)) {
+      // const missingFields = db.getInvalidFieldsForSprint(sprintData, projectID, associatedRelease);
+      const missingFields = coliberate.projects.sprints.getInvalidFieldsFor(sprintData, projectID, associatedRelease);
+      const errorMessage = `Invalid Fields: ${missingFields.join(',')}`;
+      res.status(400).send({ error: errorMessage });
+    } else {
+      const projectData = projectSearch[0];
+      const projectSprintData = projectData.sprints;
+      if (projectSprintData[sprintData.id]) {
+        
+      }
+      else {
+        return res.status(404).send({
+        error: 'Sprint ID already exists.'
+      });
       // await db.addSprint(projectID, sprintData, associatedRelease);
       await coliberate.projects.sprints.add(projectID, sprintData, associatedRelease);
       res.sendStatus(200);
