@@ -205,6 +205,15 @@ const sampleStory = {
   description: 'Add more tests to test the functionality of our application',
   businessValue: 8,
   tasks: []
+};
+
+const sampleSprint = {
+  id: 'sprint-123456',
+  name: 'Sprint 3',
+  startDate: new Date(currentDate.valueOf() + 3 * oneWeek).toDateString(),
+  endDate: new Date(new Date().valueOf() + 5 * oneWeek).toDateString(),
+  stories: [],
+  tasks: []
 }
 
 module.exports = {
@@ -212,4 +221,5 @@ module.exports = {
   sampleRelease,
   sampleTask,
   sampleStory,
+  sampleSprint
 };

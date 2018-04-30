@@ -9,3 +9,4 @@
 ## Testing
 1. If you haven't done so before, run `npm install --save-dev`
 2. Test with `npm test`
+  * **Note:** Running these tests will clear the default database, so use with caution

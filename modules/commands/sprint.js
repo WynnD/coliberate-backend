@@ -51,8 +51,15 @@ class SprintCommand extends MongoCommand {
   }
 
   async delete(projectId, sprintId) {
-    // eslint-disable-next-line no-console
-    console.log('TODO: update anything related to this sprint');
+    // eslint-disable-next-line no-consoletId});
+    const projects = await this._projectCommand.find({ id: projectId });
+    const releases = projects[0].releases;
+
+    for (const release of Object.values(releases)) {
+      release.sprints = release.sprints.filter((elem) => elem != sprintId);
+      await this._projectCommand.releases.update(projectId, release);
+    }
+
     await this._projectCommand.updateInternalField({ id: projectId }, (project) => {
       delete project.sprints[sprintId];
       return { sprints: project.sprints };

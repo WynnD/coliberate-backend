@@ -438,6 +438,23 @@ app.route('/api/projects/:project_id/sprints/:sprint_id?')
       await coliberate.projects.sprints.add(projectID, sprintData, associatedRelease);
       res.sendStatus(200);
     }
+  }).delete(async (req, res) => {
+    const projectID = req.params.project_id;
+    const sprintID = req.params.sprint_id;
+    const memberID = req.query.member_id;
+
+    const projectSearch = await getProjectsForMember(memberID, projectID);
+
+    if (projectSearch.length === 0) {
+      return res.status(404).send({ error: 'Project not found for given member' });
+    }
+
+    try {
+      await coliberate.projects.sprints.delete(projectID, sprintID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.statusCode(400).send({ error: 'Cannot delete sprint from project' });
+    }
   });
 
 app.route('/api/projects/:project_id/stories/:story_id?')
