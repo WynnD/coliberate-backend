@@ -198,8 +198,18 @@ const sampleRelease = {
   sprints: [] // array of sprint IDs
 };
 
+const sampleStory = {
+  id: 'story-0123456',
+  status: 'todo',
+  name: 'Add more tests',
+  description: 'Add more tests to test the functionality of our application',
+  businessValue: 8,
+  tasks: []
+}
+
 module.exports = {
   sampleProject,
   sampleRelease,
-  sampleTask
+  sampleTask,
+  sampleStory,
 };
