@@ -112,6 +112,11 @@ async function getProjectsForMember(memberID, projectID) {
   return data;
 }
 
+async function memberHasAccessToProject(memberID, projectID) {
+  const memberProjects = await getProjectsForMember(memberID, projectID);
+  return (memberProjects.length !== 0);
+}
+
 app.post('/api/register', memberRegisterHandler);
 
 app.post('/api/login', async (req, res) => {
@@ -242,6 +247,29 @@ app.route('/api/projects/:id?')
       // const projects = await db.findProject({ id: projectData.id });
       return res.sendStatus(200);
     }
+  }).delete(async (req, res) => {
+    const memberID = req.query.member_id;
+    const projectID = req.params.id;
+
+    if (memberID === undefined) {
+      return res.status(403).send({ error: 'No member ID specified' });
+    }
+
+    if (!projectID) {
+      res.status(403).send({ error: 'Project to delete not specified' });
+    }
+
+    const hasAccess = await memberHasAccessToProject(memberID, projectID);
+    if (!hasAccess) {
+      res.status(404).send({ error: 'Project not found' });
+    }
+
+    try {
+      await coliberate.projects.delete(projectID);
+      res.sendStatus(200);
+    } catch (e) {
+      res.status(400).send({ error: 'Project could not be deleted' });
+    }
   });
 
 app.route('/api/projects/:project_id/releases/:release_id?')
@@ -288,7 +316,6 @@ app.route('/api/projects/:project_id/releases/:release_id?')
     console.log('releaseRegisterHandler: Received', { releaseData, projectID, memberID });
 
     const projectSearch = await getProjectsForMember(memberID, projectID);
-    console.log({ projectSearch });
     if (projectSearch.length === 0) {
       res.status(404).send({ error: 'Project not found for given member' });
     // } else if (!db.isValidRelease(releaseData, projectID)) {
