@@ -65,8 +65,8 @@ test('add feature to project with associations', async () => {
 
   const projects = await cw.projects.find({ id: sampleProject.id });
   const project = projects[0];
-  const releases = await cw.projects.releases.find({ id: 'release-0' });
-  const release = releases[0];
+  console.log(project.releases);
+  const release = project.releases['release-0'];
 
   let features = Object.values(project.features);
   features = features.filter((feature) => feature.id === sampleFeature.id);
@@ -78,7 +78,7 @@ test('add feature to project with associations', async () => {
   expect(tasks.length).toBe(1);
 
   let release_features = release.features;
-  release_features = release_features.filter(e => e === 'release-0');
+  release_features = release_features.filter(e => e === sampleFeature.id);
   expect(release_features.length).toBe(1);
 });
 
@@ -86,8 +86,9 @@ test('remove feature from project with release associations', async () => {
 
   await cw.projects.features.delete(sampleProject.id, sampleFeature.id);
 
-  const releases = await cw.projects.releases.find({ id: 'release-0' });
-  const release = releases[0];
+  const projects = await cw.projects.find({ id: sampleProject.id });
+  const project = projects[0];
+  const release = project.releases['release-0'];
 
   let features = release.features;
   features = features.filter((feature) => feature.id === sampleFeature.id);
