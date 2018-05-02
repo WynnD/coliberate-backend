@@ -34,7 +34,7 @@ beforeEach(async () => {
 afterAll(async () => {
   await emptyDatabase();
   await cw.closeConnection();
-});
+}, 30000);
 
 test('adding and removing a member in the database', async () => {
   const member = {
@@ -83,7 +83,7 @@ test('adding and removing a member in the database', async () => {
 
   searchResult = await cw.members.find({ id: member.id });
   expect(searchResult.length).toBe(0);
-});
+}, 30000);
 
 test('adding and removing a project in the database', async () => {
   const project = {
@@ -285,7 +285,7 @@ test('adding and removing a project in the database', async () => {
   // searchResult = await db.findProject({ id: project.id });
   searchResult = await cw.projects.find({ id: project.id });
   expect(searchResult.length).toBe(0);
-});
+}, 30000);
 
 test('Adding and removing a release into a project in the database', async () => {
   const project = {
@@ -486,7 +486,7 @@ test('Adding and removing a release into a project in the database', async () =>
 
   searchProject = await cw.projects.find({ id: project.id });
   expect(searchProject[0].releases[release.id]).toBeUndefined();
-});
+}, 30000);
 
 test('Adding and removing a feature into a project in the database', async () => {
   const project = {
@@ -685,7 +685,7 @@ test('Adding and removing a feature into a project in the database', async () =>
 
   searchProject = await cw.projects.find({ id: project.id });
   expect(searchProject[0].features[feature.id]).toBeUndefined();
-});
+}, 30000);
 
 test('Adding and removing a sprint into a project in the database', async () => {
   const project = {
@@ -886,7 +886,7 @@ test('Adding and removing a sprint into a project in the database', async () => 
 
   searchProject = await cw.projects.find({ id: project.id });
   expect(searchProject[0].sprints[sprint.id]).toBeUndefined();
-});
+}, 30000);
 
 test('Adding and removing a story into a project in the database', async () => {
   const project = {
@@ -1089,7 +1089,7 @@ test('Adding and removing a story into a project in the database', async () => {
 
   searchProject = await cw.projects.find({ id: project.id });
   expect(searchProject[0].stories[story1.id]).toBeUndefined();
-});
+}, 30000);
 
 test('Adding and removing a task into a project in the database', async () => {
   const project = {
